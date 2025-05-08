@@ -7,6 +7,7 @@ import android.graphics.Bitmap
 import android.net.Uri
 import android.os.Build
 import android.provider.MediaStore
+import android.provider.MediaStore.Images.Media.getBitmap
 import android.util.Base64
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -30,6 +31,8 @@ import com.google.android.gms.location.LocationServices
 import kotlinx.coroutines.launch
 import java.io.ByteArrayOutputStream
 import java.time.LocalDateTime
+import android.graphics.ImageDecoder
+import androidx.compose.foundation.shape.RoundedCornerShape
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -89,7 +92,7 @@ fun SurveyFormScreen(viewModel: SurveyViewModel) {
             photoUri = it
             val bitmap: Bitmap? = try {
                 if (Build.VERSION.SDK_INT < 28) {
-                    MediaStore.Images.Media.getBitmap(context.contentResolver, it)
+                    getBitmap(context.contentResolver, it)
                 } else {
                     val source = ImageDecoder.createSource(context.contentResolver, it)
                     ImageDecoder.decodeBitmap(source)
@@ -215,6 +218,7 @@ fun SurveyFormScreen(viewModel: SurveyViewModel) {
     }
 }
 
+@ExperimentalMaterial3Api
 @Composable
 fun DropdownSelector(
     label: String,
