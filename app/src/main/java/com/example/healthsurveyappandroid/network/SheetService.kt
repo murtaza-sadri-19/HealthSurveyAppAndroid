@@ -1,96 +1,158 @@
 package com.example.healthsurveyappandroid.network
 
+import android.content.Context
 import android.util.Log
 import com.example.healthsurveyappandroid.data.Survey
-import retrofit2.Retrofit
-import retrofit2.converter.gson.GsonConverterFactory
-import retrofit2.http.*
+import com.google.auth.oauth2.GoogleCredentials
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
+import okhttp3.MediaType.Companion.toMediaType
+import okhttp3.OkHttpClient
+import okhttp3.Request
+import okhttp3.RequestBody.Companion.toRequestBody
+import org.json.JSONArray
+import org.json.JSONObject
 
-interface SheetsApi {
-    @POST("v4/spreadsheets/{spreadsheetId}/values/{range}:append")
-    suspend fun appendSurvey(
-        @Path("spreadsheetId") spreadsheetId: String,
-        @Path("range") range: String,
-        @Query("valueInputOption") valueInputOption: String = "RAW",
-        @Query("insertDataOption") insertDataOption: String = "INSERT_ROWS",
-        @Query("includeValuesInResponse") includeValuesInResponse: Boolean = false,
-        @Query("responseDateTimeRenderOption") responseDateTimeRenderOption: String = "FORMATTED_STRING",
-        @Query("key") apiKey: String,
-        @Body requestBody: SheetsRequest
-    ): SheetsResponse
-}
+class SheetsService(private val context: Context) {
 
-data class SheetsRequest(val values: List<List<String>>)
-data class SheetsResponse(
-    val spreadsheetId: String,
-    val updates: Updates?
-)
+    private val client = OkHttpClient()
 
-data class Updates(
-    val spreadsheetId: String,
-    val updatedRange: String,
-    val updatedData: UpdatedData?
-)
-
-data class UpdatedData(
-    val range: String,
-    val majorDimension: String
-)
-
-class SheetsService {
-    private val sheetsApi: SheetsApi
-
-    init {
-        val retrofit = Retrofit.Builder()
-            .baseUrl("https://sheets.googleapis.com/")
-            .addConverterFactory(GsonConverterFactory.create())
-            .build()
-        sheetsApi = retrofit.create(SheetsApi::class.java)
-    }
-
-    suspend fun submitSurvey(survey: Survey, spreadsheetId: String, apiKey: String) {
+    suspend fun submitSurvey(survey: Survey, spreadsheetId: String): Boolean = withContext(Dispatchers.IO) {
         try {
-            Log.d("SheetsService", "Submitting survey: ${survey.registrationId}")
+            // 1) Authenticate
+            val credentials = context.assets.open("service_account.json").use {
+                GoogleCredentials.fromStream(it)
+                    .createScoped(listOf("https://www.googleapis.com/auth/spreadsheets"))
+            }
+            credentials.refreshIfExpired()
+            val token = credentials.accessToken.tokenValue
 
-            val row = listOf(
+            // 2) Build rowValues as pure strings
+            val rowValues = listOf(
                 survey.registrationId,
-                survey.name,
-                survey.guardianName ?: "",
+                survey.name.orEmpty(),
+                survey.guardianName.orEmpty(),
                 survey.age.toString(),
-                survey.sex,
-                survey.state,
-                survey.city,
-                survey.pincode,
-                survey.address,
-                survey.disease,
-                survey.bloodGroup,
-                survey.aadhaar,
-                survey.photoBase64 ?: "",
-                survey.educationLevel,
-                survey.schoolName ?: "",
+                survey.sex.orEmpty(),
+                survey.state.orEmpty(),
+                survey.city.orEmpty(),
+                survey.pincode.orEmpty(),
+                survey.address.orEmpty(),
+                survey.disease.orEmpty(),
+                survey.bloodGroup.orEmpty(),
+                survey.aadhaar.orEmpty(),
+                survey.photoBase64.orEmpty(),
+                survey.educationLevel.orEmpty(),
+                survey.schoolName.orEmpty(),
                 if (survey.nutritionStatus) "Yes" else "No",
-                survey.immunizationStatus,
-                survey.village,
-                survey.district,
-                survey.gpsLocation ?: "",
-                survey.surveyDateTime,
-                survey.surveyTakerId,
-                survey.remarks ?: ""
+                survey.immunizationStatus.orEmpty(),
+                survey.village.orEmpty(),
+                survey.district.orEmpty(),
+                survey.gpsLocation.orEmpty(),
+                survey.surveyDateTime.orEmpty(),
+                survey.surveyTakerId.orEmpty(),
+                survey.remarks.orEmpty()
             )
 
-            Log.d("SheetsService", "Survey row prepared for upload: $row")
+            // 3) Wrap into JSON arrays
+            val rowArray = JSONArray().apply { rowValues.forEach { put(it) } }
+            val valuesArray = JSONArray().put(rowArray)
+            val jsonBody = JSONObject().put("values", valuesArray)
+            val body = jsonBody
+                .toString()
+                .toRequestBody("application/json".toMediaType())
 
-            val request = SheetsRequest(values = listOf(row))
-            val response = sheetsApi.appendSurvey(
-                spreadsheetId = spreadsheetId,
-                range = "Sheet1!A1:Z",
-                apiKey = apiKey,
-                requestBody = request
-            )
+            // 4) Build and execute request
+            val url = "https://sheets.googleapis.com/v4/spreadsheets/$spreadsheetId/values/Sheet1!A1:append?valueInputOption=RAW"
+            val request = Request.Builder()
+                .url(url)
+                .addHeader("Authorization", "Bearer $token")
+                .addHeader("Content-Type", "application/json")
+                .post(body)
+                .build()
 
-            Log.d("SheetsService", "Survey pushed successfully: ${response.updates?.updatedRange}")
+            client.newCall(request).execute().use { response ->
+                if (!response.isSuccessful) {
+                    val err = response.body?.string().orEmpty()
+                    Log.e("SheetsService", "Upload failed: ${response.code} → $err")
+                    return@withContext false
+                }
+            }
+
+            Log.d("SheetsService", "Survey uploaded successfully")
+            true
+
         } catch (e: Exception) {
-            Log.e("SheetsService", "Failed to submit survey: ${e.localizedMessage}", e)
+            Log.e("SheetsService", "Error uploading survey: ${e.localizedMessage}", e)
+            false
         }
     }
+    suspend fun fetchSurveys(spreadsheetId: String): List<Survey> = withContext(Dispatchers.IO) {
+        try {
+            // 1) Authenticate using service account credentials
+            val credentials = context.assets.open("service_account.json").use {
+                GoogleCredentials.fromStream(it)
+                    .createScoped(listOf("https://www.googleapis.com/auth/spreadsheets.readonly"))
+            }
+            credentials.refreshIfExpired()
+            val token = credentials.accessToken.tokenValue
+
+            // 2) Build the GET request URL for reading values from Sheet1
+            val url = "https://sheets.googleapis.com/v4/spreadsheets/$spreadsheetId/values/Sheet1!A2:Z"
+
+            // 3) Build the request with authorization header
+            val request = Request.Builder()
+                .url(url)
+                .addHeader("Authorization", "Bearer $token")
+                .build()
+
+            // 4) Execute the request
+            client.newCall(request).execute().use { response ->
+                if (!response.isSuccessful) {
+                    Log.e("SheetsService", "Fetch failed: ${response.code} -> ${response.message}")
+                    return@withContext emptyList()
+                }
+
+                val body = response.body?.string() ?: return@withContext emptyList()
+                val json = JSONObject(body)
+                val values = json.optJSONArray("values") ?: return@withContext emptyList()
+
+                val surveys = mutableListOf<Survey>()
+                for (i in 0 until values.length()) {
+                    val row = values.getJSONArray(i)
+                    val survey = Survey(
+                        registrationId = row.optString(0),
+                        name = row.optString(1),
+                        guardianName = row.optString(2),
+                        age = row.optString(3).toIntOrNull() ?: 0,
+                        sex = row.optString(4),
+                        state = row.optString(5),
+                        city = row.optString(6),
+                        pincode = row.optString(7),
+                        address = row.optString(8),
+                        disease = row.optString(9),
+                        bloodGroup = row.optString(10),
+                        aadhaar = row.optString(11),
+                        photoBase64 = row.optString(12),
+                        educationLevel = row.optString(13),
+                        schoolName = row.optString(14),
+                        nutritionStatus = row.optString(15) == "Yes",
+                        immunizationStatus = row.optString(16),
+                        village = row.optString(17),
+                        district = row.optString(18),
+                        gpsLocation = row.optString(19),
+                        surveyDateTime = row.optString(20),
+                        surveyTakerId = row.optString(21),
+                        remarks = row.optString(22)
+                    )
+                    surveys.add(survey)
+                }
+                return@withContext surveys
+            }
+        } catch (e: Exception) {
+            Log.e("SheetsService", "Error fetching surveys: ${e.localizedMessage}", e)
+            return@withContext emptyList()
+        }
+    }
+
 }
