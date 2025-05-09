@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "528640708964",
+    "project_id": "healthsurveyapp-39d43",
+    "storage_bucket": "healthsurveyapp-39d43.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:528640708964:android:7990ebe45cd7dd14d86a71",
+        "android_client_info": {
+          "package_name": "com.example.healthsurveyappandroid"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyA1BD7EVvqRD5BYDSBGXIRZKv3QDTWS_Ec"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
