@@ -1,3 +1,7 @@
+@file:Suppress("UNUSED_EXPRESSION")
+
+import com.android.build.api.dsl.Packaging
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
@@ -10,7 +14,7 @@ repositories {
 }
 android {
     namespace = "com.example.healthsurveyappandroid"
-    compileSdk = 35
+    compileSdk = 34
 
     defaultConfig {
         applicationId = "com.example.healthsurveyappandroid"
@@ -22,7 +26,7 @@ android {
     }
 
     // Resolve META-INF duplicate entries
-    packagingOptions {
+    packaging {
         resources {
             excludes += setOf(
                 "META-INF/DEPENDENCIES",
@@ -35,6 +39,7 @@ android {
             )
         }
     }
+
 
     buildTypes {
         release {
