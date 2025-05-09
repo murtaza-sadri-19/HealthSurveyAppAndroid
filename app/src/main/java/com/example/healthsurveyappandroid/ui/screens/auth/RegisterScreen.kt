@@ -19,12 +19,13 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.lifecycle.viewmodel.compose.viewModel
 
 @Composable
-fun LoginScreen(
+fun RegisterScreen(
     viewModel: AuthViewModel = viewModel(),
-    onNavigateToRegister: () -> Unit,
+    onNavigateToLogin: () -> Unit,
     onNavigateToHome: () -> Unit
 ) {
     val loginState by viewModel.loginState.collectAsState()
+    var name by remember { mutableStateOf("") }
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
 
@@ -42,9 +43,18 @@ fun LoginScreen(
         verticalArrangement = Arrangement.Center
     ) {
         Text(
-            text = "Login",
+            text = "Register",
             style = MaterialTheme.typography.headlineMedium,
             modifier = Modifier.padding(bottom = 24.dp)
+        )
+
+        OutlinedTextField(
+            value = name,
+            onValueChange = { name = it },
+            label = { Text("Name") },
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(bottom = 8.dp)
         )
 
         OutlinedTextField(
@@ -69,7 +79,7 @@ fun LoginScreen(
         )
 
         Button(
-            onClick = { viewModel.loginUser(email, password) },
+            onClick = { viewModel.registerUser(email, password, name) },
             modifier = Modifier
                 .fillMaxWidth()
                 .height(50.dp),
@@ -81,15 +91,15 @@ fun LoginScreen(
                     modifier = Modifier.size(24.dp)
                 )
             } else {
-                Text("Login")
+                Text("Register")
             }
         }
 
         TextButton(
-            onClick = onNavigateToRegister,
+            onClick = onNavigateToLogin,
             modifier = Modifier.padding(top = 8.dp)
         ) {
-            Text("Don't have an account? Register")
+            Text("Already have an account? Login")
         }
 
         if (loginState.isError) {

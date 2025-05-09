@@ -15,8 +15,12 @@ import com.example.healthsurveyappandroid.viewmodel.SurveyViewModel
 import com.example.healthsurveyappandroid.ui.screens.auth.LoginScreen
 import com.example.healthsurveyappandroid.ui.screens.admin.AdminHomeScreen
 import com.example.healthsurveyappandroid.ui.screens.user.SurveyFormScreen
+import com.google.firebase.Firebase
+import com.google.firebase.firestore.firestore
+import com.google.firebase.auth.FirebaseAuth
 
 class MainActivity : ComponentActivity() {
+    val db = Firebase.firestore
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 

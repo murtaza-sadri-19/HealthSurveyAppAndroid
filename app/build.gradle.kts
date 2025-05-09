@@ -113,6 +113,7 @@ dependencies {
     implementation(libs.androidx.lifecycle.viewmodel.compose)
     //extra
     implementation(libs.androidx.multidex)
+    implementation(libs.google.firebase.firestore.ktx)
 
     // Testing
     testImplementation(libs.junit)
