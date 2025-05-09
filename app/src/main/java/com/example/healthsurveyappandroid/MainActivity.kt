@@ -3,48 +3,45 @@ package com.example.healthsurveyappandroid
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
 import androidx.compose.runtime.remember
+import androidx.compose.ui.Modifier
 import androidx.lifecycle.viewmodel.compose.viewModel
-import androidx.navigation.compose.NavHost
-import androidx.navigation.compose.composable
-import androidx.navigation.compose.rememberNavController
 import com.example.healthsurveyappandroid.network.SheetsService
 import com.example.healthsurveyappandroid.repository.SurveyRepository
+import com.example.healthsurveyappandroid.ui.navigation.AppNavigation
+import com.example.healthsurveyappandroid.ui.theme.HealthSurveyAppAndroidTheme
 import com.example.healthsurveyappandroid.viewmodel.AuthViewModel
 import com.example.healthsurveyappandroid.viewmodel.SurveyViewModel
-import com.example.healthsurveyappandroid.ui.screens.auth.LoginScreen
-import com.example.healthsurveyappandroid.ui.screens.admin.AdminHomeScreen
-import com.example.healthsurveyappandroid.ui.screens.user.SurveyFormScreen
-import com.google.firebase.Firebase
-import com.google.firebase.firestore.firestore
 import com.google.firebase.auth.FirebaseAuth
 
 class MainActivity : ComponentActivity() {
-    val db = Firebase.firestore
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        // Initialize Firebase Auth
+        FirebaseAuth.getInstance()
 
         val sheetsService = SheetsService(this)
         val repository = SurveyRepository(sheetsService)
 
         setContent {
-            val navController = rememberNavController()
-            val authViewModel: AuthViewModel = viewModel()
-            val surveyViewModel = remember { SurveyViewModel(repository) }
+            HealthSurveyAppAndroidTheme {
+                Surface(
+                    modifier = Modifier.fillMaxSize(),
+                    color = MaterialTheme.colorScheme.background
+                ) {
+                    // Create ViewModels with proper initialization
+                    val authViewModel: AuthViewModel = viewModel()
+                    val surveyViewModel = remember { SurveyViewModel(repository) }
 
-            NavHost(navController, startDestination = "login") {
-                composable("login") {
-                    LoginScreen(
-                        viewModel = authViewModel,
-                        onUserLogin = { navController.navigate("survey") },
-                        onAdminLogin = { navController.navigate("admin") }
-                    )
-                }
-                composable("survey") {
-                    SurveyFormScreen(surveyViewModel)
-                }
-                composable("admin") {
-                    AdminHomeScreen(surveyViewModel)
+                    // Check if user is already logged in
+                    authViewModel.checkCurrentUser()
+
+                    // Use the extracted navigation component
+                    AppNavigation(authViewModel, surveyViewModel)
                 }
             }
         }

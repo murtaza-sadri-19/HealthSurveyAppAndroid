@@ -1,3 +1,4 @@
 <resources>
     <string name="app_name">HealthSurveyAppAndroid</string>
+    <string name="default_web_client_id">"AIzaSyA1BD7EVvqRD5BYDSBGXIRZKv3QDTWS_Ec"</string>
 </resources>
