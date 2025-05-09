@@ -4,6 +4,7 @@ coilCompose = "2.4.0"
 converterGson = "2.9.0"
 firebaseAuth = "23.2.0"
 firebaseBom = "LATEST_VERSION"
+firebaseBomVersion = "33.13.0"
 firebaseFirestore = "24.10.0"
 googleAuthLibraryOauth2Http = "1.19.0"
 kotlin = "2.0.21"
@@ -18,6 +19,7 @@ activityCompose = "1.10.1"
 composeBom = "2024.09.00"
 lifecycleViewmodelCompose = "2.6.2"
 material = "1.5.4"
+multidex = "2.0.1"
 navigationCompose = "2.7.5"
 navigationComposeVersion = "2.9.0"
 okhttp = "4.11.0"
@@ -32,12 +34,15 @@ uiToolingPreview = "1.5.4"
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
 androidx-lifecycle-viewmodel-compose = { module = "androidx.lifecycle:lifecycle-viewmodel-compose", version.ref = "lifecycleViewmodelCompose" }
 androidx-material = { module = "androidx.compose.material:material", version.ref = "material" }
+androidx-multidex = { module = "androidx.multidex:multidex", version.ref = "multidex" }
 androidx-navigation-compose = { module = "androidx.navigation:navigation-compose", version.ref = "navigationCompose" }
 androidx-navigation-compose-v290 = { module = "androidx.navigation:navigation-compose", version.ref = "navigationComposeVersion" }
 coil-compose = { module = "io.coil-kt:coil-compose", version.ref = "coilCompose" }
 converter-gson = { module = "com.squareup.retrofit2:converter-gson", version.ref = "converterGson" }
+firebase-analytics = { module = "com.google.firebase:firebase-analytics" }
 firebase-auth = { module = "com.google.firebase:firebase-auth", version.ref = "firebaseAuth" }
 firebase-bom = { module = "com.google.firebase:firebase-bom", version.ref = "firebaseBom" }
+firebase-bom-v33130 = { module = "com.google.firebase:firebase-bom", version.ref = "firebaseBomVersion" }
 firebase-common-ktx = { module = "com.google.firebase:firebase-common-ktx" }
 firebase-firestore = { module = "com.google.firebase:firebase-firestore", version.ref = "firebaseFirestore" }
 firebase-firestore-ktx = { module = "com.google.firebase:firebase-firestore-ktx" }

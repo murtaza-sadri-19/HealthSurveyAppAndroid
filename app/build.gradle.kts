@@ -1,11 +1,8 @@
-@file:Suppress("UNUSED_EXPRESSION")
-
-import com.android.build.api.dsl.Packaging
-
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
+    id("com.google.gms.google-services")
 }
 repositories {
     // google()
@@ -14,7 +11,8 @@ repositories {
 }
 android {
     namespace = "com.example.healthsurveyappandroid"
-    compileSdk = 34
+    //noinspection GradleDependency
+    compileSdk = 35
 
     defaultConfig {
         applicationId = "com.example.healthsurveyappandroid"
@@ -23,6 +21,7 @@ android {
         versionCode = 1
         versionName = "1.0"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+        multiDexEnabled = true
     }
 
     // Resolve META-INF duplicate entries
@@ -37,9 +36,14 @@ android {
                 "META-INF/NOTICE.txt",
                 "META-INF/notice.txt"
             )
+            pickFirsts += setOf(
+                "lib/x86/libc++_shared.so",
+                "lib/x86_64/libc++_shared.so",
+                "lib/armeabi-v7a/libc++_shared.so",
+                "lib/arm64-v8a/libc++_shared.so"
+            )
         }
     }
-
 
     buildTypes {
         release {
@@ -100,18 +104,15 @@ dependencies {
     implementation(libs.google.auth.library.oauth2.http)
 
     //Firebase
-
-    implementation(libs.firebase.bom)
-
-    // Add the dependencies for the desired Firebase products without specifying versions
-    implementation(libs.firebase.firestore.ktx)
-    implementation(libs.firebase.common.ktx)
-
+    implementation(platform(libs.firebase.bom.v33130))
+    implementation(libs.firebase.analytics)
     //Navigation
     implementation(libs.androidx.navigation.compose)
 
     // ViewModel
     implementation(libs.androidx.lifecycle.viewmodel.compose)
+    //extra
+    implementation(libs.androidx.multidex)
 
     // Testing
     testImplementation(libs.junit)
