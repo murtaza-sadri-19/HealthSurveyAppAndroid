@@ -103,6 +103,20 @@ dependencies {
     // Google Auth (for Sheets API if used)
     implementation(libs.google.auth.library.oauth2.http)
 
+    //Authentication
+    // Add to your dependencies block
+    implementation(platform("com.google.firebase:firebase-bom:33.13.0"))
+    implementation("com.google.firebase:firebase-auth")
+    implementation("com.google.firebase:firebase-firestore")
+
+    // Google Sheets API dependencies
+    implementation("com.google.api-client:google-api-client:2.0.0")
+    implementation("com.google.oauth-client:google-oauth-client-jetty:1.34.1")
+    implementation("com.google.apis:google-api-services-sheets:v4-rev20220927-2.0.0")
+    implementation("com.google.auth:google-auth-library-oauth2-http:1.19.0")
+    implementation("com.fasterxml.jackson.core:jackson-databind:2.15.2")
+
+
     //Firebase
     implementation(platform(libs.firebase.bom.v33130))
     implementation(libs.firebase.analytics)
@@ -113,6 +127,7 @@ dependencies {
     implementation(libs.androidx.lifecycle.viewmodel.compose)
     //extra
     implementation(libs.androidx.multidex)
+    implementation(libs.google.firebase.firestore.ktx)
 
     // Testing
     testImplementation(libs.junit)
