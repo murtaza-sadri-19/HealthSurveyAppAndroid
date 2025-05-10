@@ -11,7 +11,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import com.example.healthsurveyappandroid.viewmodel.AuthViewModel
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
+// Removed unused import: androidx.lifecycle.compose.collectAsStateWithLifecycle
 
 @Composable
 fun RegisterScreen(
@@ -23,12 +23,16 @@ fun RegisterScreen(
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var confirmPassword by remember { mutableStateOf("") }
+    var isLoading by remember { mutableStateOf(false) }
+    var isSuccess by remember { mutableStateOf(false) }
+    var isError by remember { mutableStateOf(false) }
+    var errorMessage by remember { mutableStateOf("") }
 
-    val loginState by viewModel.loginState.collectAsStateWithLifecycle()
+    // Removed unused loginState variable
 
     // Check if registration was successful
-    LaunchedEffect(loginState.isSuccess) {
-        if (loginState.isSuccess) {
+    LaunchedEffect(isSuccess) {
+        if (isSuccess) {
             onNavigateToHome()
         }
     }
@@ -103,16 +107,27 @@ fun RegisterScreen(
         Button(
             onClick = {
                 if (password == confirmPassword) {
-                    viewModel.registerUser(email, password, name)
+                    isLoading = true
+                    isError = false
+                    errorMessage = ""
+                    viewModel.registerUser(email, password, name) { success, error ->
+                        isLoading = false
+                        if (success) {
+                            isSuccess = true
+                        } else {
+                            isError = true
+                            errorMessage = error ?: "Registration failed"
+                        }
+                    }
                 }
             },
             modifier = Modifier
                 .fillMaxWidth()
                 .height(50.dp),
-            enabled = !loginState.isLoading && password == confirmPassword &&
+            enabled = !isLoading && password == confirmPassword &&
                     name.isNotBlank() && email.isNotBlank() && password.isNotBlank()
         ) {
-            if (loginState.isLoading) {
+            if (isLoading) {
                 CircularProgressIndicator(
                     modifier = Modifier.size(24.dp),
                     color = MaterialTheme.colorScheme.onPrimary
@@ -131,9 +146,9 @@ fun RegisterScreen(
             Text("Already have an account? Login")
         }
 
-        if (loginState.isError) {
+        if (isError) {
             Text(
-                text = loginState.errorMessage,
+                text = errorMessage,
                 color = MaterialTheme.colorScheme.error,
                 modifier = Modifier.padding(top = 16.dp)
             )
