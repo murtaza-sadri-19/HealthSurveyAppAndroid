@@ -5,26 +5,94 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import com.example.healthsurveyappandroid.viewmodel.AuthViewModel
 import com.example.healthsurveyappandroid.viewmodel.SurveyViewModel
 
 @Composable
-fun AdminHomeScreen(viewModel: SurveyViewModel) {
+fun AdminHomeScreen(
+    viewModel: SurveyViewModel,
+    authViewModel: AuthViewModel,
+    onNavigateToCreateSurvey: () -> Unit,
+    onNavigateToLogin: () -> Unit,
+    onNavigateToSurveyDetail: () -> Unit
+) {
+    // Observe surveys, loading, and error from the ViewModel
     val surveys by viewModel.surveys.collectAsState()
+    val isLoading by viewModel.isLoading.collectAsState()
+    val error by viewModel.error.collectAsState()
+
+    // Automatically load surveys when entering the dashboard
+    LaunchedEffect(Unit) {
+        viewModel.loadSurveys()
+    }
 
     Column(modifier = Modifier.padding(16.dp)) {
         Text("Admin Dashboard", style = MaterialTheme.typography.headlineMedium)
         Spacer(modifier = Modifier.height(16.dp))
 
+        // Show loading indicator
+        if (isLoading) {
+            LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
+            Spacer(modifier = Modifier.height(16.dp))
+        }
+
+        // Show error if any
+        error?.let {
+            Text(
+                text = "Error: $it",
+                color = MaterialTheme.colorScheme.error,
+                modifier = Modifier.padding(bottom = 16.dp)
+            )
+        }
+
         // Show total surveys
         Text("Total Surveys: ${surveys.size}")
 
-        // List surveys
-        surveys.forEach { survey ->
-            Text(text = "Survey: ${survey.name} (${survey.registrationId})")
-            HorizontalDivider() // Updated for Material3
+        // Refresh button
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.End
+        ) {
+            OutlinedButton(onClick = { viewModel.loadSurveys() }) {
+                Text("Refresh")
+            }
         }
 
-        // TODO: Add charts using MPAndroidChart (via AndroidView) or Compose chart library
+        Spacer(modifier = Modifier.height(8.dp))
 
+        // List surveys
+        surveys.forEach { survey ->
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 4.dp),
+                elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+            ) {
+                Column(modifier = Modifier.padding(16.dp)) {
+                    Text(text = "Survey: ${survey.name} (${survey.registrationId})")
+                    // You can add more details here if needed
+                }
+            }
+        }
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        // Action buttons
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            Button(onClick = onNavigateToCreateSurvey) {
+                Text("Create Survey")
+            }
+            Button(
+                onClick = {
+                    authViewModel.signOut()
+                    onNavigateToLogin()
+                }
+            ) {
+                Text("Logout")
+            }
+        }
     }
 }

@@ -1,12 +1,10 @@
 package com.example.healthsurveyappandroid.ui.screens.user
 
 import android.Manifest
-import android.app.Activity
 import android.content.pm.PackageManager
 import android.graphics.Bitmap
 import android.net.Uri
 import android.os.Build
-import android.provider.MediaStore
 import android.provider.MediaStore.Images.Media.getBitmap
 import android.util.Base64
 import android.widget.Toast
@@ -20,7 +18,6 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
@@ -32,15 +29,18 @@ import kotlinx.coroutines.launch
 import java.io.ByteArrayOutputStream
 import java.time.LocalDateTime
 import android.graphics.ImageDecoder
-import androidx.compose.foundation.shape.RoundedCornerShape
+import com.example.healthsurveyappandroid.viewmodel.AuthViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun SurveyFormScreen(viewModel: SurveyViewModel) {
+fun SurveyFormScreen(
+    viewModel: SurveyViewModel,
+    authViewModel: AuthViewModel,
+    onNavigateToLogin: () -> Unit
+) {
     val scrollState = rememberScrollState()
     val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
-
     val fusedLocationClient = remember {
         LocationServices.getFusedLocationProviderClient(context)
     }
@@ -64,8 +64,6 @@ fun SurveyFormScreen(viewModel: SurveyViewModel) {
     var village by remember { mutableStateOf("") }
     var district by remember { mutableStateOf("") }
     var remarks by remember { mutableStateOf("") }
-
-    // GPS and image
     var gpsLocation by remember { mutableStateOf<String?>(null) }
     var photoUri by remember { mutableStateOf<Uri?>(null) }
     var photoBase64 by remember { mutableStateOf<String?>(null) }
@@ -121,7 +119,35 @@ fun SurveyFormScreen(viewModel: SurveyViewModel) {
         OutlinedTextField(value = age, onValueChange = { age = it }, label = { Text("Age") })
         DropdownSelector("Sex", sex, listOf("Male", "Female", "Other")) { sex = it }
         OutlinedTextField(value = state, onValueChange = { state = it }, label = { Text("State") })
-        OutlinedTextField(value = city, onValueChange = { city = it }, label = { Text("City") })
+
+        // City input field (disabled if village is not blank)
+        OutlinedTextField(
+            value = city,
+            onValueChange = {
+                city = it
+                if (it.isNotBlank()) village = ""
+            },
+            label = { Text("City") },
+            enabled = village.isBlank(),
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(bottom = 8.dp)
+        )
+
+        // Village input field (disabled if city is not blank)
+        OutlinedTextField(
+            value = village,
+            onValueChange = {
+                village = it
+                if (it.isNotBlank()) city = ""
+            },
+            label = { Text("Village") },
+            enabled = city.isBlank(),
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(bottom = 8.dp)
+        )
+
         OutlinedTextField(value = pincode, onValueChange = { pincode = it }, label = { Text("Pincode") })
         OutlinedTextField(value = address, onValueChange = { address = it }, label = { Text("Address") })
         OutlinedTextField(value = disease, onValueChange = { disease = it }, label = { Text("Disease") })
@@ -140,7 +166,6 @@ fun SurveyFormScreen(viewModel: SurveyViewModel) {
         DropdownSelector("Immunization Status", immunizationStatus, listOf("Complete", "Incomplete", "Not Started")) {
             immunizationStatus = it
         }
-        OutlinedTextField(value = village, onValueChange = { village = it }, label = { Text("Village") })
         OutlinedTextField(value = district, onValueChange = { district = it }, label = { Text("District") })
         OutlinedTextField(value = remarks, onValueChange = { remarks = it }, label = { Text("Remarks") })
 
@@ -214,6 +239,14 @@ fun SurveyFormScreen(viewModel: SurveyViewModel) {
             }
         }) {
             Text("Submit Survey")
+        }
+        Button(
+            onClick = {
+                authViewModel.signOut()
+                onNavigateToLogin()
+            }
+        ) {
+            Text("Logout")
         }
     }
 }

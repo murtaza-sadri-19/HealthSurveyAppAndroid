@@ -1,8 +1,11 @@
 package com.example.healthsurveyappandroid.viewmodel
 
-sealed class LoginState {
-    data class Success(val role: String) : LoginState()
-    data class Error(val message: String) : LoginState()
-    object Loading : LoginState()
-    object Idle : LoginState()
-}
+import com.example.healthsurveyappandroid.data.User
+
+data class LoginState(
+    val isLoading: Boolean = false,
+    val isSuccess: Boolean = false,
+    val isError: Boolean = false,
+    val errorMessage: String = "",
+    val user: User? = null
+)

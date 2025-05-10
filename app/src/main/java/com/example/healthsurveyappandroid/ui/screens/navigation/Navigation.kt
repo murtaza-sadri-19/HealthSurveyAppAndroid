@@ -1,8 +1,9 @@
-package com.example.healthsurveyappandroid.ui.navigation
+package com.example.healthsurveyappandroid.ui.screens.navigation
 
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.collectAsState
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
@@ -13,89 +14,81 @@ import com.example.healthsurveyappandroid.ui.screens.user.SurveyFormScreen
 import com.example.healthsurveyappandroid.viewmodel.AuthViewModel
 import com.example.healthsurveyappandroid.viewmodel.SurveyViewModel
 
-// Create a sealed class for navigation routes
 sealed class Screen(val route: String) {
     object Login : Screen("login")
     object Register : Screen("register")
-    object Admin : Screen("admin")
-    object Survey : Screen("survey")
+    object AdminHome : Screen("admin_home")
+    object SurveyForm : Screen("survey_form")
 }
 
-// Extract navigation to a separate composable
 @Composable
 fun AppNavigation(
     authViewModel: AuthViewModel,
     surveyViewModel: SurveyViewModel
 ) {
     val navController = rememberNavController()
-    val loginState by authViewModel.loginState.collectAsState()
+    val authState by authViewModel.authState.collectAsState()
 
-    // Determine start destination based on login state
-    val startDestination = if (loginState.isSuccess) {
-        if (loginState.user?.role == "admin") Screen.Admin.route else Screen.Survey.route
-    } else {
-        Screen.Login.route
+    // Role-based navigation: navigate only when user changes
+    LaunchedEffect(authState.user?.role) {
+        when (authState.user?.role) {
+            "admin" -> navController.navigate(Screen.AdminHome.route) {
+                popUpTo(Screen.Login.route) { inclusive = true }
+            }
+            "user" -> navController.navigate(Screen.SurveyForm.route) {
+                popUpTo(Screen.Login.route) { inclusive = true }
+            }
+        }
     }
 
     NavHost(
         navController = navController,
-        startDestination = startDestination
+        startDestination = Screen.Login.route
     ) {
         composable(Screen.Login.route) {
             LoginScreen(
                 viewModel = authViewModel,
                 onNavigateToRegister = { navController.navigate(Screen.Register.route) },
-                onNavigateToHome = {
-                    val destination = if (authViewModel.loginState.value.user?.role == "admin") {
-                        Screen.Admin.route
-                    } else {
-                        Screen.Survey.route
-                    }
-                    navController.navigate(destination) {
-                        popUpTo(Screen.Login.route) { inclusive = true }
-                    }
-                }
+                onNavigateToAdmin = { navController.navigate(Screen.AdminHome.route) },
+                onNavigateToUser = { navController.navigate(Screen.SurveyForm.route) }
             )
         }
 
         composable(Screen.Register.route) {
             RegisterScreen(
                 viewModel = authViewModel,
-                onNavigateToLogin = { navController.navigate(Screen.Login.route) },
+                onNavigateToLogin = { navController.popBackStack() },
                 onNavigateToHome = {
-                    val destination = if (authViewModel.loginState.value.user?.role == "admin") {
-                        Screen.Admin.route
-                    } else {
-                        Screen.Survey.route
-                    }
-                    navController.navigate(destination) {
+                    navController.navigate(Screen.SurveyForm.route) {
                         popUpTo(Screen.Register.route) { inclusive = true }
                     }
                 }
             )
         }
 
-        composable(Screen.Admin.route) {
+        composable(Screen.AdminHome.route) {
             AdminHomeScreen(
                 viewModel = surveyViewModel,
                 authViewModel = authViewModel,
-                onNavigateToCreateSurvey = { /* No implementation needed for now */ },
+                onNavigateToCreateSurvey = { /* Implement if needed */ },
                 onNavigateToLogin = {
+                    authViewModel.signOut()
                     navController.navigate(Screen.Login.route) {
-                        popUpTo(Screen.Admin.route) { inclusive = true }
+                        popUpTo(Screen.AdminHome.route) { inclusive = true }
                     }
                 },
-                onNavigateToSurveyDetail = { /* No implementation needed for now */ }
+                onNavigateToSurveyDetail = { /* Implement if needed */ }
             )
         }
 
-        composable(Screen.Survey.route) {
+        composable(Screen.SurveyForm.route) {
             SurveyFormScreen(
                 viewModel = surveyViewModel,
                 authViewModel = authViewModel,
                 onNavigateToLogin = {
+                    authViewModel.signOut()
                     navController.navigate(Screen.Login.route) {
-                        popUpTo(Screen.Survey.route) { inclusive = true }
+                        popUpTo(Screen.SurveyForm.route) { inclusive = true }
                     }
                 }
             )

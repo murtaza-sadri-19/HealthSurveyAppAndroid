@@ -4,14 +4,9 @@ plugins {
     alias(libs.plugins.kotlin.compose)
     id("com.google.gms.google-services")
 }
-repositories {
-    // google()
-    //mavenCentral()
-    // jcenter() is deprecated, avoid unless absolutely needed
-}
+
 android {
     namespace = "com.example.healthsurveyappandroid"
-    //noinspection GradleDependency
     compileSdk = 35
 
     defaultConfig {
@@ -24,7 +19,6 @@ android {
         multiDexEnabled = true
     }
 
-    // Resolve META-INF duplicate entries
     packaging {
         resources {
             excludes += setOf(
@@ -74,7 +68,6 @@ dependencies {
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(libs.androidx.activity.compose)
-    implementation(libs.androidx.activity.compose)
     implementation(libs.ui)
     implementation(libs.androidx.material)
     implementation(libs.ui.tooling.preview)
@@ -88,6 +81,10 @@ dependencies {
     implementation(libs.kotlinx.coroutines.core)
     implementation(libs.kotlinx.coroutines.android)
 
+    // Debug implementations for development
+    debugImplementation(libs.androidx.ui.tooling)
+    debugImplementation(libs.androidx.ui.test.manifest)
+    debugImplementation("com.squareup.leakcanary:leakcanary-android:2.12")
 
     // Network
     implementation(libs.retrofit)
@@ -103,11 +100,10 @@ dependencies {
     // Google Auth (for Sheets API if used)
     implementation(libs.google.auth.library.oauth2.http)
 
-    //Authentication
-    // Add to your dependencies block
-    implementation(platform("com.google.firebase:firebase-bom:33.13.0"))
-    implementation("com.google.firebase:firebase-auth")
-    implementation("com.google.firebase:firebase-firestore")
+    // Authentication
+    implementation("androidx.credentials:credentials:1.2.0")
+    implementation("androidx.credentials:credentials-play-services-auth:1.2.0")
+    implementation("com.google.android.libraries.identity.googleid:googleid:1.1.0")
 
     // Google Sheets API dependencies
     implementation("com.google.api-client:google-api-client:2.0.0")
@@ -116,27 +112,26 @@ dependencies {
     implementation("com.google.auth:google-auth-library-oauth2-http:1.19.0")
     implementation("com.fasterxml.jackson.core:jackson-databind:2.15.2")
 
-
-    //Firebase
-    implementation(platform(libs.firebase.bom.v33130))
+    // Firebase (using BoM for version management)
+    implementation(platform("com.google.firebase:firebase-bom:33.13.0"))
+    implementation("com.google.firebase:firebase-auth")
+    implementation("com.google.firebase:firebase-auth-ktx")
+    implementation("com.google.firebase:firebase-firestore")
+    implementation("com.google.firebase:firebase-firestore-ktx")
     implementation(libs.firebase.analytics)
-    //Navigation
+
+    // Navigation
     implementation(libs.androidx.navigation.compose)
+    implementation(libs.androidx.navigation.compose.v290)
 
     // ViewModel
     implementation(libs.androidx.lifecycle.viewmodel.compose)
-    //extra
+
+    // MultiDex
     implementation(libs.androidx.multidex)
     implementation(libs.google.firebase.firestore.ktx)
 
     // Testing
-    testImplementation(libs.junit)
-    androidTestImplementation(libs.androidx.junit)
-    androidTestImplementation(libs.androidx.espresso.core)
-    androidTestImplementation(platform(libs.androidx.compose.bom))
-    androidTestImplementation(libs.androidx.ui.test.junit4)
-    implementation(libs.androidx.navigation.compose.v290)
-
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
