@@ -10,9 +10,11 @@ import com.example.healthsurveyappandroid.data.Survey
 
 @Composable
 fun SurveyCard(survey: Survey) {
-    Card(modifier = Modifier
-        .fillMaxWidth()
-        .padding(vertical = 4.dp)) {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 4.dp)
+    ) {
         Column(modifier = Modifier.padding(16.dp)) {
             Text(text = "Name: ${survey.name}", style = MaterialTheme.typography.titleMedium)
             Text(text = "Age: ${survey.age}")

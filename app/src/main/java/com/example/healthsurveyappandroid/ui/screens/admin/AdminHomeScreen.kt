@@ -16,12 +16,10 @@ fun AdminHomeScreen(
     onNavigateToLogin: () -> Unit,
     onNavigateToSurveyDetail: () -> Unit
 ) {
-    // Observe surveys, loading, and error from the ViewModel
     val surveys by viewModel.surveys.collectAsState()
     val isLoading by viewModel.isLoading.collectAsState()
     val error by viewModel.error.collectAsState()
 
-    // Automatically load surveys when entering the dashboard
     LaunchedEffect(Unit) {
         viewModel.loadSurveys()
     }
@@ -30,13 +28,11 @@ fun AdminHomeScreen(
         Text("Admin Dashboard", style = MaterialTheme.typography.headlineMedium)
         Spacer(modifier = Modifier.height(16.dp))
 
-        // Show loading indicator
         if (isLoading) {
             LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
             Spacer(modifier = Modifier.height(16.dp))
         }
 
-        // Show error if any
         error?.let {
             Text(
                 text = "Error: $it",
@@ -45,10 +41,8 @@ fun AdminHomeScreen(
             )
         }
 
-        // Show total surveys
         Text("Total Surveys: ${surveys.size}")
 
-        // Refresh button
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.End
@@ -60,7 +54,6 @@ fun AdminHomeScreen(
 
         Spacer(modifier = Modifier.height(8.dp))
 
-        // List surveys
         surveys.forEach { survey ->
             Card(
                 modifier = Modifier
@@ -70,14 +63,12 @@ fun AdminHomeScreen(
             ) {
                 Column(modifier = Modifier.padding(16.dp)) {
                     Text(text = "Survey: ${survey.name} (${survey.registrationId})")
-                    // You can add more details here if needed
                 }
             }
         }
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        // Action buttons
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween

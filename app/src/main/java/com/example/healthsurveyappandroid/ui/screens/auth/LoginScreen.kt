@@ -67,7 +67,6 @@ fun LoginScreen(
                 style = MaterialTheme.typography.headlineMedium,
                 modifier = Modifier.padding(bottom = 24.dp)
             )
-
             OutlinedTextField(
                 value = email,
                 onValueChange = { email = it },
@@ -81,7 +80,6 @@ fun LoginScreen(
                     .padding(bottom = 16.dp),
                 singleLine = true
             )
-
             OutlinedTextField(
                 value = password,
                 onValueChange = { password = it },
@@ -96,7 +94,6 @@ fun LoginScreen(
                     .padding(bottom = 24.dp),
                 singleLine = true
             )
-
             Button(
                 onClick = {
                     isLoading = true
@@ -120,15 +117,6 @@ fun LoginScreen(
                 } else {
                     Text("Login")
                 }
-            }
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            TextButton(
-                onClick = onNavigateToRegister,
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Text("Don't have an account? Register")
             }
         }
     }
