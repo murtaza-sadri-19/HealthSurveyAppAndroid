@@ -80,6 +80,9 @@ dependencies {
     implementation(libs.androidx.material3)
     implementation(libs.kotlinx.coroutines.core)
     implementation(libs.kotlinx.coroutines.android)
+    implementation(libs.identity.jvm)
+    implementation("androidx.compose.material3:material3:1.2.1")
+
 
     // Debug implementations for development
     debugImplementation(libs.androidx.ui.tooling)
