@@ -28,7 +28,10 @@ android {
                 "META-INF/license.txt",
                 "META-INF/NOTICE",
                 "META-INF/NOTICE.txt",
-                "META-INF/notice.txt"
+                "META-INF/notice.txt",
+                "/META-INF/versions/9/OSGI-INF/MANIFEST.MF",
+                "/META-INF/*.version",
+                "/META-INF/*.kotlin_module"
             )
             pickFirsts += setOf(
                 "lib/x86/libc++_shared.so",

@@ -10,6 +10,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import android.net.Uri
+import androidx.compose.runtime.mutableStateOf
 
 class SurveyViewModel(private val repository: SurveyRepository) : ViewModel() {
 
@@ -39,7 +40,7 @@ class SurveyViewModel(private val repository: SurveyRepository) : ViewModel() {
         _samagraIdUri.value = samagra
     }
     private val _survey = mutableStateOf(Survey())
-    val survey: State<Survey> = _survey
+    val survey = _survey
 
     fun initializeSurvey() {
         _survey.value = Survey() // this generates new UUID each time
