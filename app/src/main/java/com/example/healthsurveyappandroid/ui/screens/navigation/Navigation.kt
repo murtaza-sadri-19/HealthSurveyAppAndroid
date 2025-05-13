@@ -14,13 +14,22 @@ import com.example.healthsurveyappandroid.ui.screens.auth.RegisterScreen
 import com.example.healthsurveyappandroid.ui.screens.user.SurveyFormScreen
 import com.example.healthsurveyappandroid.viewmodel.AuthViewModel
 import com.example.healthsurveyappandroid.viewmodel.SurveyViewModel
+import com.example.healthsurveyappandroid.viewmodel.AdminViewModel
+import com.example.healthsurveyappandroid.ui.screens.admin.AdminDashboardScreen
+import com.example.healthsurveyappandroid.ui.screens.admin.CreateUserScreen
+import com.example.healthsurveyappandroid.ui.screens.admin.ManageUsersScreen
+import com.example.healthsurveyappandroid.ui.screens.admin.SurveyAnalyticsScreen
 
 sealed class Screen(val route: String) {
     object Login : Screen("login")
     object Register : Screen("register")
-    object AdminHome : Screen("admin_home")
-    object SurveyForm : Screen("survey_form")
-    object Dashboard : Screen("dashboard") // Optional: Define after submission
+    object AdminHome : Screen("admin/home")
+    object AdminDashboard : Screen("admin/dashboard")
+    object CreateUser : Screen("admin/create-user")
+    object ManageUsers : Screen("admin/manage-users")
+    object SurveyForm : Screen("survey/form")
+    object Dashboard : Screen("dashboard")
+    object SurveyAnalytics : Screen("admin/survey-analytics")
 }
 
 @Composable
@@ -54,7 +63,6 @@ fun AppNavigation(
                 onNavigateToUser = { navController.navigate(Screen.SurveyForm.route) }
             )
         }
-
         composable(Screen.Register.route) {
             RegisterScreen(
                 viewModel = authViewModel,
@@ -66,7 +74,6 @@ fun AppNavigation(
                 }
             )
         }
-
         composable(Screen.AdminHome.route) {
             AdminHomeScreen(
                 viewModel = surveyViewModel,
@@ -81,20 +88,30 @@ fun AppNavigation(
                 onNavigateToSurveyDetail = { /* Not yet implemented */ }
             )
         }
-
+        composable(Screen.AdminDashboard.route) {
+            AdminDashboardScreen(
+                onUserManagement = { navController.navigate(Screen.ManageUsers.route) },
+                onCreateUser = { navController.navigate(Screen.CreateUser.route) }
+            )
+        }
+        composable(Screen.CreateUser.route) {
+            CreateUserScreen(viewModel = authViewModel as AdminViewModel)
+        }
+        composable(Screen.ManageUsers.route) {
+            ManageUsersScreen(viewModel = authViewModel as AdminViewModel)
+        }
         composable(Screen.SurveyForm.route) {
             SurveyFormScreen(
                 surveyViewModel = surveyViewModel,
                 onSubmitSuccess = {
-                    // Navigate to dashboard or show a confirmation
                     navController.navigate(Screen.Dashboard.route)
                 }
             )
         }
-
-        // Optional Dashboard destination placeholder
+        composable(Screen.SurveyAnalytics.route) {
+            SurveyAnalyticsScreen(viewModel = surveyViewModel)
+        }
         composable(Screen.Dashboard.route) {
-            // TODO: Create a DashboardScreen Composable
             Text("Survey Submitted Successfully!")
         }
     }
