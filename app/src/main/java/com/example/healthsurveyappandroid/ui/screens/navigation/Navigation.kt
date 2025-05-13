@@ -1,5 +1,6 @@
 package com.example.healthsurveyappandroid.ui.screens.navigation
 
+import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -19,6 +20,7 @@ sealed class Screen(val route: String) {
     object Register : Screen("register")
     object AdminHome : Screen("admin_home")
     object SurveyForm : Screen("survey_form")
+    object Dashboard : Screen("dashboard") // Optional: Define after submission
 }
 
 @Composable
@@ -29,7 +31,6 @@ fun AppNavigation(
     val navController = rememberNavController()
     val authState by authViewModel.authState.collectAsState()
 
-    // Role-based navigation: navigate only when user changes
     LaunchedEffect(authState.user?.role) {
         when (authState.user?.role) {
             "admin" -> navController.navigate(Screen.AdminHome.route) {
@@ -70,28 +71,31 @@ fun AppNavigation(
             AdminHomeScreen(
                 viewModel = surveyViewModel,
                 authViewModel = authViewModel,
-                onNavigateToCreateSurvey = { /* Implement if needed */ },
+                onNavigateToCreateSurvey = { /* Not yet implemented */ },
                 onNavigateToLogin = {
                     authViewModel.signOut()
                     navController.navigate(Screen.Login.route) {
                         popUpTo(Screen.AdminHome.route) { inclusive = true }
                     }
                 },
-                onNavigateToSurveyDetail = { /* Implement if needed */ }
+                onNavigateToSurveyDetail = { /* Not yet implemented */ }
             )
         }
 
         composable(Screen.SurveyForm.route) {
             SurveyFormScreen(
-                viewModel = surveyViewModel,
-                authViewModel = authViewModel,
-                onNavigateToLogin = {
-                    authViewModel.signOut()
-                    navController.navigate(Screen.Login.route) {
-                        popUpTo(Screen.SurveyForm.route) { inclusive = true }
-                    }
+                surveyViewModel = surveyViewModel,
+                onSubmitSuccess = {
+                    // Navigate to dashboard or show a confirmation
+                    navController.navigate(Screen.Dashboard.route)
                 }
             )
+        }
+
+        // Optional Dashboard destination placeholder
+        composable(Screen.Dashboard.route) {
+            // TODO: Create a DashboardScreen Composable
+            Text("Survey Submitted Successfully!")
         }
     }
 }

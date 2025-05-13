@@ -9,6 +9,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import android.net.Uri
 
 class SurveyViewModel(private val repository: SurveyRepository) : ViewModel() {
 
@@ -20,6 +21,29 @@ class SurveyViewModel(private val repository: SurveyRepository) : ViewModel() {
 
     private val _error = MutableStateFlow<String?>(null)
     val error: StateFlow<String?> = _error.asStateFlow()
+
+    private val _currentSurvey = MutableStateFlow(Survey())
+    val currentSurvey: StateFlow<Survey> = _currentSurvey.asStateFlow()
+
+    fun updateSurvey(updated: Survey) {
+        _currentSurvey.value = updated
+    }
+    private val _photoUri = MutableStateFlow<Uri?>(null)
+    val photoUri: StateFlow<Uri?> = _photoUri.asStateFlow()
+
+    private val _samagraIdUri = MutableStateFlow<Uri?>(null)
+    val samagraIdUri: StateFlow<Uri?> = _samagraIdUri.asStateFlow()
+
+    fun setPhotoUris(photo: Uri?, samagra: Uri?) {
+        _photoUri.value = photo
+        _samagraIdUri.value = samagra
+    }
+    private val _survey = mutableStateOf(Survey())
+    val survey: State<Survey> = _survey
+
+    fun initializeSurvey() {
+        _survey.value = Survey() // this generates new UUID each time
+    }
 
     fun loadSurveys() {
         _isLoading.value = true
@@ -36,11 +60,10 @@ class SurveyViewModel(private val repository: SurveyRepository) : ViewModel() {
         }
     }
 
-    fun submitSurvey(survey: Survey) {
+    fun submitSurvey() {
         viewModelScope.launch {
             try {
-                repository.submitSurvey(survey)
-                // Optionally refresh surveys after submission
+                repository.submitSurvey(_currentSurvey.value)
                 loadSurveys()
             } catch (e: Exception) {
                 _error.value = e.message
@@ -48,7 +71,6 @@ class SurveyViewModel(private val repository: SurveyRepository) : ViewModel() {
         }
     }
 
-    // Factory to create the ViewModel with dependencies
     class Factory(private val repository: SurveyRepository) : ViewModelProvider.Factory {
         @Suppress("UNCHECKED_CAST")
         override fun <T : ViewModel> create(modelClass: Class<T>): T {
