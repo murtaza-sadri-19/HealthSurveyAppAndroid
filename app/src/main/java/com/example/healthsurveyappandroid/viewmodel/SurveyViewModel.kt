@@ -26,21 +26,27 @@ class SurveyViewModel(private val repository: SurveyRepository) : ViewModel() {
     private val _currentSurvey = MutableStateFlow(Survey())
     val currentSurvey: StateFlow<Survey> = _currentSurvey.asStateFlow()
 
-    fun updateSurvey(updated: Survey) {
-        _currentSurvey.value = updated
-    }
     private val _photoUri = MutableStateFlow<Uri?>(null)
     val photoUri: StateFlow<Uri?> = _photoUri.asStateFlow()
 
     private val _samagraIdUri = MutableStateFlow<Uri?>(null)
     val samagraIdUri: StateFlow<Uri?> = _samagraIdUri.asStateFlow()
 
+    private val _survey = mutableStateOf(Survey())
+    val survey = _survey
+
+    init {
+        loadSurveys() // Ensure surveys are loaded when the ViewModel is initialized
+    }
+
+    fun updateSurvey(updated: Survey) {
+        _currentSurvey.value = updated
+    }
+
     fun setPhotoUris(photo: Uri?, samagra: Uri?) {
         _photoUri.value = photo
         _samagraIdUri.value = samagra
     }
-    private val _survey = mutableStateOf(Survey())
-    val survey = _survey
 
     fun initializeSurvey() {
         _survey.value = Survey() // this generates new UUID each time
