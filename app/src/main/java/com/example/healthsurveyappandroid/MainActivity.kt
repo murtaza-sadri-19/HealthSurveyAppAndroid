@@ -14,6 +14,7 @@ import com.example.healthsurveyappandroid.network.SheetsService
 import com.example.healthsurveyappandroid.repository.SurveyRepository
 import com.example.healthsurveyappandroid.ui.screens.navigation.AppNavigation
 import com.example.healthsurveyappandroid.ui.theme.HealthSurveyAppAndroidTheme
+import com.example.healthsurveyappandroid.viewmodel.AdminViewModel
 import com.example.healthsurveyappandroid.viewmodel.AuthViewModel
 import com.example.healthsurveyappandroid.viewmodel.SurveyViewModel
 import com.google.firebase.auth.FirebaseAuth
@@ -38,18 +39,8 @@ class MainActivity : ComponentActivity() {
                 ) {
                     val authViewModel: AuthViewModel = viewModel()
                     val surveyViewModel = remember { SurveyViewModel(repository) }
-
-//                   val LaunchedEffect(Unit) {
-//                        authViewModel.checkCurrentUser { role ->
-//                            when (role) {
-//                                "admin" -> authViewModel.setAdminNavigation()
-//                                "user" -> authViewModel.setUserNavigation()
-//                                else -> authViewModel.setAuthNavigation()
-//                            }
-//                        }
-//                    }
-
-                    AppNavigation(authViewModel, surveyViewModel)
+                    val adminViewModel: AdminViewModel = viewModel()
+                    AppNavigation(authViewModel, surveyViewModel, adminViewModel)
                 }
             }
         }
