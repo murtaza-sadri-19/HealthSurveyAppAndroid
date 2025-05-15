@@ -49,5 +49,7 @@ fun AdminDashboardScreen(
             Text("Survey Analytics")
         } // Added closing brace
 
+        // Logout using sign out
+
     }
 }
