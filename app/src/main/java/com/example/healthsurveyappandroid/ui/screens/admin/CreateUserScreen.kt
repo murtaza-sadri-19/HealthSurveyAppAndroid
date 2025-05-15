@@ -13,6 +13,7 @@ import kotlin.collections.getValue
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CreateUserScreen(viewModel: AdminViewModel) {
+    var name by remember { mutableStateOf("") }
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var role by remember { mutableStateOf("user") }
@@ -40,6 +41,17 @@ fun CreateUserScreen(viewModel: AdminViewModel) {
                 Column(modifier = Modifier.padding(16.dp)) {
                     Text("Create New User", style = MaterialTheme.typography.titleLarge)
                     Spacer(modifier = Modifier.height(16.dp))
+
+                    OutlinedTextField(
+                        value = name,
+                        onValueChange = { name = it },
+                        label = { Text("Name") },
+                        placeholder = { Text("Enter Name") },
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+
+                    Spacer(modifier = Modifier.height(8.dp))
 
                     OutlinedTextField(
                         value = email,
@@ -101,10 +113,11 @@ fun CreateUserScreen(viewModel: AdminViewModel) {
                     Button(
                         onClick = {
                             isLoading = true
-                            viewModel.createUser(email, password, role) { success, error ->
+                            viewModel.createUser(name, email, password, role) { success, error ->
                                 isLoading = false
                                 resultMessage = if (success){
                                     "✅ User created successfully!"
+                                    name = ""
                                     email = ""
                                     password = ""
                                     role = "user"

@@ -26,11 +26,12 @@ class AdminViewModel : ViewModel() {
             }
     }
 
-    fun createUser(email: String, password: String, role: String, onResult: (Boolean, String?) -> Unit) {
+    fun createUser(name: String, email: String, password: String, role: String, onResult: (Boolean, String?) -> Unit) {
         auth.createUserWithEmailAndPassword(email, password)
             .addOnSuccessListener { authResult ->
                 val user = User(
                     id = authResult.user?.uid ?: "",
+                    name = name,
                     email = email,
                     role = role
                 )

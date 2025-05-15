@@ -57,16 +57,23 @@ class AuthViewModel : ViewModel() {
     }
 
     private fun fetchUserRole(onResult: (String?) -> Unit) {
-        currentUser?.uid?.let { uid ->
-            viewModelScope.launch {
-                try {
-                    val document = usersCollection.document(uid).get().await()
-                    onResult(document.getString("role"))
-                } catch (e: Exception) {
-                    onResult(null)
-                }
+        val uid = currentUser?.uid
+        if (uid == null) {
+            onResult(null)
+            return
+        }
+
+        viewModelScope.launch {
+            try {
+                val document = usersCollection.document(uid).get().await()
+                val role = document.getString("role")
+                println("Fetched role: $role") // Debug log
+                onResult(role)
+            } catch (e: Exception) {
+                e.printStackTrace()
+                onResult(null)
             }
-        } ?: onResult(null)
+        }
     }
 
     fun signOut() {
