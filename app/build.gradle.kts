@@ -4,6 +4,7 @@ plugins {
     alias(libs.plugins.kotlin.compose)
     id("com.google.gms.google-services")
 }
+val HealthSurveyApp by extra("")
 
 android {
     namespace = "com.example.healthsurveyappandroid"
