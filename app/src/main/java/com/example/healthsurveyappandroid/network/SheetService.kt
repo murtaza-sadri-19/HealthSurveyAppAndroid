@@ -34,9 +34,11 @@ class SheetsService(private val context: Context) {
                 survey.gender.orEmpty(),
                 survey.state.orEmpty(),
                 survey.city.orEmpty(),
+                survey.district.orEmpty(),
                 survey.pinCode.orEmpty(),
                 survey.permanentAddress.orEmpty(),
                 survey.temporaryAddress.orEmpty(),
+                survey.gpsCoordinates.orEmpty(),
                 survey.disease.orEmpty(),
                 survey.bloodGroup.orEmpty(),
                 survey.samagraId.orEmpty(),
@@ -44,7 +46,9 @@ class SheetsService(private val context: Context) {
                 survey.immunizationStatus.orEmpty(),
                 survey.surveyDateTime.orEmpty(),
                 survey.surveyTakerId.orEmpty(),
-                survey.remarks.orEmpty()
+                survey.remarks.orEmpty() ,
+                survey.photoUrl.orEmpty(),
+                survey.samagraIdPhotoUrl.orEmpty()
             )
 
             val rowArray = JSONArray().apply { rowValues.forEach { put(it) } }
@@ -113,22 +117,26 @@ class SheetsService(private val context: Context) {
                         gender = row.optString(4),
                         state = row.optString(5),
                         city = row.optString(6),
-                        pinCode = row.optString(7),
-                        permanentAddress = row.optString(8),
-                        temporaryAddress = row.optString(9),
-                        disease = row.optString(10),
-                        bloodGroup = row.optString(11),
-                        samagraId = row.optString(12),
+                        district=row.optString(7),
+                        pinCode = row.optString(8),
+                        permanentAddress = row.optString(9),
+                        temporaryAddress = row.optString(10),
+                        gpsCoordinates=row.optString(11),
+                        disease = row.optString(12),
+                        bloodGroup = row.optString(13),
+                        samagraId = row.optString(14),
 
-                        highestEducation = row.optString(13),
+                        highestEducation = row.optString(15),
 
 
-                        immunizationStatus = row.optString(14),
+                        immunizationStatus = row.optString(16),
 
 
-                        surveyDateTime = row.optString(15),
-                        surveyTakerId = row.optString(16),
-                        remarks = row.optString(17)
+                        surveyDateTime = row.optString(17),
+                        surveyTakerId = row.optString(18),
+                        remarks = row.optString(19),
+                        photoUrl = row.optString(20),
+                        samagraIdPhotoUrl = row.optString(21)
                     )
                     surveys.add(survey)
                 }
