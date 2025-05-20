@@ -1,6 +1,6 @@
 package com.example.healthsurveyappandroid.ui.screens.navigation
 
-import androidx.compose.material.Text
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -101,5 +101,6 @@ fun AppNavigation(
         composable(Screen.Dashboard.route) {
             Text("Survey Submitted Successfully!")
         }
+
     }
 }

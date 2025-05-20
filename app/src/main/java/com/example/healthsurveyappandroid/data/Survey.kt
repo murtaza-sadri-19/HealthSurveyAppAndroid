@@ -1,9 +1,10 @@
 package com.example.healthsurveyappandroid.data
 
 import com.android.identity.util.UUID
+//import com.example.healthsurveyappandroid.utils.Validators.generateUniqueRegistrationId
 
 data class Survey(
-    val registrationId: String = UUID.randomUUID().toString().take(8),
+    val registrationId: String = "",
     val surveyDateTime: String = "",
     val surveyTakerId: String = "",
 
@@ -24,11 +25,14 @@ data class Survey(
     // Address Details
     val state: String = "",
     val city: String = "",
+    val district: String ="",
     val pinCode: String = "",
     val permanentAddress: String = "",
     val temporaryAddress: String = "",
+    val gpsCoordinates: String? = null,
 
     // Document Upload
     val photoUrl: String = "",
-    val samagraIdPhotoUrl: String = ""
+    val samagraIdPhotoUrl: String = "",
+
 )

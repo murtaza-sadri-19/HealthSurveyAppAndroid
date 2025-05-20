@@ -1,66 +1,128 @@
 package com.example.healthsurveyappandroid.ui.screens.user
 
 import androidx.compose.foundation.layout.*
-import androidx.compose.material.MaterialTheme
-import androidx.compose.material.Text
-import androidx.compose.material.TopAppBar
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Sync
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.example.healthsurveyappandroid.viewmodel.SurveyViewModel
+import kotlinx.coroutines.launch
 
-
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SurveyFormScreen(
     surveyViewModel: SurveyViewModel,
     onSubmitSuccess: () -> Unit
 ) {
     var step by remember { mutableStateOf(0) }
+    val snackbarHostState = remember { SnackbarHostState() }
+    val scope = rememberCoroutineScope()
 
-    Column(modifier = Modifier
-        .fillMaxSize()
-        .padding(16.dp)) {
+    // State observers
+    val submissionResult by surveyViewModel.submissionResult.collectAsState()
+    val syncStatus by surveyViewModel.syncStatus.collectAsState()
+    val currentSurvey by surveyViewModel.currentSurvey.collectAsState()
 
-        // 🔷 TOP PANEL
-        TopAppBar(
-            title = { Text("Health Survey", style = MaterialTheme.typography.h5) },
-            modifier = Modifier.fillMaxWidth()
-        )
+    // Handle sync status changes
+    LaunchedEffect(syncStatus) {
+        when (val status = syncStatus) {
+            is SurveyViewModel.SyncStatus.Syncing -> {
+                snackbarHostState.showSnackbar("Syncing pending surveys...")
+            }
+            is SurveyViewModel.SyncStatus.Success -> {
+                if (status.count > 0) {
+                    snackbarHostState.showSnackbar("Synced ${status.count} surveys successfully")
+                }
+            }
+            is SurveyViewModel.SyncStatus.Error -> {
+                snackbarHostState.showSnackbar("Sync error: ${status.message}")
+            }
+            else -> {}
+        }
+    }
 
-        // 🔷 SURVEY STEP CONTENT
-        when (step) {
-            0 -> PersonalDetailsPage(
-                survey = surveyViewModel.currentSurvey.collectAsState().value,
-                onNext = {
-                    surveyViewModel.updateSurvey(it)
-                    step++
+    // Handle submission results
+    LaunchedEffect(submissionResult) {
+        submissionResult?.let { message ->
+            snackbarHostState.showSnackbar(message)
+            surveyViewModel.clearResult()
+        }
+    }
+
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = { Text("Health Survey") },
+                actions = {
+                    IconButton(
+                        onClick = {
+                            scope.launch {
+                                surveyViewModel.syncPendingSurveys()
+                            }
+                        },
+                        enabled = syncStatus !is SurveyViewModel.SyncStatus.Syncing
+                    ) {
+                        Icon(Icons.Filled.Sync, contentDescription = "Sync Local Surveys")
+                        if (syncStatus is SurveyViewModel.SyncStatus.Syncing) {
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(24.dp),
+                                color = MaterialTheme.colorScheme.onPrimary,
+                                strokeWidth = 2.dp
+                            )
+                        }
+                    }
                 }
             )
-            1 -> HealthDetailsPage(
-                survey = surveyViewModel.currentSurvey.collectAsState().value,
-                onNext = {
-                    surveyViewModel.updateSurvey(it)
-                    step++
-                },
-                onBack = { step-- }
-            )
-            2 -> AddressDetailsPage(
-                survey = surveyViewModel.currentSurvey.collectAsState().value,
-                onNext = {
-                    surveyViewModel.updateSurvey(it)
-                    step++
-                },
-                onBack = { step-- }
-            )
-            3 -> DocumentUploadPage(
-                surveyViewModel = surveyViewModel,
-                onBack = { step-- },
-                onSubmit = {
-                    surveyViewModel.submitSurvey()
-                    onSubmitSuccess()
-                }
-            )
+        },
+        snackbarHost = { SnackbarHost(snackbarHostState) }
+    ) { padding ->
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(padding)
+                .padding(16.dp)
+        ) {
+            // Survey step content
+            when (step) {
+                0 -> PersonalDetailsPage(
+                    survey = currentSurvey,
+                    onNext = {
+                        surveyViewModel.updateSurvey(it)
+                        step++
+                    }
+                )
+                1 -> HealthDetailsPage(
+                    survey = currentSurvey,
+                    onNext = {
+                        surveyViewModel.updateSurvey(it)
+                        step++
+                    },
+                    onBack = { step-- }
+                )
+                2 -> AddressDetailsPage(
+
+                    survey = currentSurvey,
+                    viewModel = surveyViewModel,
+                    onNext = {
+                        surveyViewModel.updateSurvey(it)
+                        step++
+                    },
+                    onBack = { step-- }
+                )
+                3 -> DocumentUploadPage(
+                    surveyViewModel = surveyViewModel,
+                    onBack = { step-- },
+                    onSubmit = {
+                        scope.launch {
+                            surveyViewModel.submitSurvey()
+                            onSubmitSuccess()
+                        }
+                    }
+                )
+            }
         }
     }
 }
+

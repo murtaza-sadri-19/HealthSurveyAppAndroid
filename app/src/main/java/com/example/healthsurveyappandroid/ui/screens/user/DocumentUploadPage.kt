@@ -23,7 +23,7 @@ fun DocumentUploadPage(
 ) {
     var photoUri by remember { mutableStateOf<Uri?>(null) }
     var samagraIdPhotoUri by remember { mutableStateOf<Uri?>(null) }
-
+    var surveyTakerId by remember { mutableStateOf("") }
     val photoLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent()
     ) { uri -> photoUri = uri }
@@ -62,6 +62,15 @@ fun DocumentUploadPage(
                     .fillMaxWidth()
             )
         }
+        Spacer(modifier = Modifier.height(24.dp))
+
+        //  Survey Taker ID field
+        OutlinedTextField(
+            value = surveyTakerId,
+            onValueChange = { surveyTakerId = it },
+            label = { Text("Survey Taker ID") },
+            modifier = Modifier.fillMaxWidth()
+        )
 
         Spacer(modifier = Modifier.height(24.dp))
 
@@ -71,6 +80,7 @@ fun DocumentUploadPage(
             }
             Button(onClick = {
                 surveyViewModel.setPhotoUris(photoUri, samagraIdPhotoUri)
+                surveyViewModel.setSurveyTakerId(surveyTakerId)
                 onSubmit()
             }) {
                 Text("Submit")
