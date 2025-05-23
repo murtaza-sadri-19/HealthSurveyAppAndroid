@@ -109,7 +109,7 @@ fun EditUserDialog(
 
 @Composable
 fun ManageUsersScreen(viewModel: AdminViewModel) {
-    val users by viewModel.users.observeAsState(initial = emptyList())
+    val users by viewModel.users.observeAsState(initial = emptyList<User>())
     var editingUser by remember { mutableStateOf<User?>(null) }
 
     LazyColumn(

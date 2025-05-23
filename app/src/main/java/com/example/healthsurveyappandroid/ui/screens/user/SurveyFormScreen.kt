@@ -21,7 +21,7 @@ fun SurveyFormScreen(
     val scope = rememberCoroutineScope()
 
     // State observers
-    val submissionResult by surveyViewModel.submissionResult.collectAsState()
+    val submissionResult by surveyViewModel.submissionResult.collectAsState(initial = null)
     val syncStatus by surveyViewModel.syncStatus.collectAsState()
     val currentSurvey by surveyViewModel.currentSurvey.collectAsState()
 

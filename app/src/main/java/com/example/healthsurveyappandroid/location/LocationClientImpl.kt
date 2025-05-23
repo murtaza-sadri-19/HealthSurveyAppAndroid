@@ -1,17 +1,20 @@
 package com.example.healthsurveyappandroid.location
-
 import android.annotation.SuppressLint
 import android.content.Context
 import android.location.Location
 import android.os.Build
 import android.os.Looper
 import android.util.Log
-import com.example.healthsurveyappandroid.viewmodel.LocationClient
 import com.google.android.gms.location.*
 import com.google.android.gms.tasks.CancellationTokenSource
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.tasks.await
 import kotlin.coroutines.resume
+
+
+interface LocationClient {
+    suspend fun getLocation(highAccuracy: Boolean): Location?
+}
 
 class LocationClientImpl(context: Context) : LocationClient {
 
