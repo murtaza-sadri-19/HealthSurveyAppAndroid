@@ -6,10 +6,11 @@ import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.healthsurveyappandroid.data.SurveyDatabase
+import com.example.healthsurveyappandroid.location.LocationClientImpl
 import com.example.healthsurveyappandroid.network.SheetsService
 import com.example.healthsurveyappandroid.repository.SurveyRepository
 import com.example.healthsurveyappandroid.ui.screens.navigation.AppNavigation
@@ -28,8 +29,18 @@ class MainActivity : ComponentActivity() {
         FirebaseAuth.getInstance()
         FirebaseFirestore.getInstance()
 
+        // Initialize Room database and DAO
+        val database = SurveyDatabase.getDatabase(applicationContext)
+        val surveyDao = database.surveyDao()
+
+        // Initialize location client
+        val locationClient = LocationClientImpl(applicationContext)
+
         val sheetsService = SheetsService(this)
-        val repository = SurveyRepository(sheetsService)
+        val repository = SurveyRepository(
+            sheetsService,
+            surveyDao = surveyDao  // Now properly initialized
+        )
 
         setContent {
             HealthSurveyAppAndroidTheme {
@@ -38,11 +49,23 @@ class MainActivity : ComponentActivity() {
                     color = MaterialTheme.colorScheme.background
                 ) {
                     val authViewModel: AuthViewModel = viewModel()
-                    val surveyViewModel = remember { SurveyViewModel(repository) }
                     val adminViewModel: AdminViewModel = viewModel()
+
+                    // Proper SurveyViewModel initialization
+                    val surveyViewModel = remember {
+                        SurveyViewModel(
+                            repository = repository,
+                            locationClient = locationClient  // Now provided
+                        )
+                    }
+
                     AppNavigation(authViewModel, surveyViewModel, adminViewModel)
                 }
             }
         }
     }
+}
+
+private fun Unit.surveyDao() {
+    TODO("Not yet implemented")
 }
