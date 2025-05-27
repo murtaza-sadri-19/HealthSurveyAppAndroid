@@ -2,7 +2,7 @@ package com.example.healthsurveyappandroid.viewmodel
 
 import android.location.Location
 import android.net.Uri
-import android.util.Log
+//import android.util.Log
 import androidx.compose.runtime.State
 import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
@@ -150,7 +150,7 @@ class SurveyViewModel(
     }
 
 
-    /** ✅ FIXED: Updates `locationStatus` instead of using a callback **/
+    /** ✅ FIXED: Updates locationStatus instead of using a callback **/
     fun getCurrentLocation() {
         viewModelScope.launch {
             _locationStatus.value = LocationStatus.Loading

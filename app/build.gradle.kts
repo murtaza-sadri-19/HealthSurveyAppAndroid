@@ -136,6 +136,9 @@ dependencies {
     implementation ("androidx.activity:activity-compose:1.8.0")
     implementation ("androidx.core:core-ktx:1.12.0")
 
+    implementation ("androidx.compose.runtime:runtime-livedata:1.6.7")
+
+
     // Testing
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)

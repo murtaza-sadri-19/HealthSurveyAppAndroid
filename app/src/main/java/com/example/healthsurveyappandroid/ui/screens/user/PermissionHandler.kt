@@ -8,7 +8,6 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.platform.LocalContext
 import com.example.healthsurveyappandroid.viewmodel.SurveyViewModel
 
-// PermissionHandler.kt
 @Composable
 fun RequestLocationPermission(
     viewModel: SurveyViewModel,
