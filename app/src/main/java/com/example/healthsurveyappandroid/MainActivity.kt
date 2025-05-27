@@ -16,7 +16,7 @@ import com.example.healthsurveyappandroid.ui.screens.navigation.AppNavigation
 import com.example.healthsurveyappandroid.ui.theme.HealthSurveyAppAndroidTheme
 import com.example.healthsurveyappandroid.viewmodel.AdminViewModel
 import com.example.healthsurveyappandroid.viewmodel.AuthViewModel
-import com.example.healthsurveyappandroid.viewmodel.LocationClient
+import com.example.healthsurveyappandroid.location.LocationClient
 import com.example.healthsurveyappandroid.viewmodel.SurveyViewModel
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
@@ -34,7 +34,7 @@ class MainActivity : ComponentActivity() {
         val surveyDao = database.surveyDao()
 
         // Initialize location client
-        val locationClient = LocationClientImpl(applicationContext)
+        val locationClient: LocationClient = LocationClientImpl(applicationContext)
 
         // Use application context for SheetsService to prevent leaks
         val sheetsService = SheetsService(applicationContext)
@@ -72,7 +72,9 @@ class SurveyViewModelFactory(
     override fun <T : androidx.lifecycle.ViewModel> create(modelClass: Class<T>): T {
         if (modelClass.isAssignableFrom(SurveyViewModel::class.java)) {
             @Suppress("UNCHECKED_CAST")
-            return SurveyViewModel(repository, locationClient) as T
+            return SurveyViewModel(repository,
+                locationClient as com.example.healthsurveyappandroid.location.LocationClient
+            ) as T
         }
         throw IllegalArgumentException("Unknown ViewModel class")
     }
