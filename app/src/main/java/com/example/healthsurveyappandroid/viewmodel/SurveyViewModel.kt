@@ -14,6 +14,7 @@ import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.*
+import com.example.healthsurveyappandroid.location.LocationClient
 
 class SurveyViewModel(
     private val repository: SurveyRepository,
