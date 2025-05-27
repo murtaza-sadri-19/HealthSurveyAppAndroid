@@ -50,6 +50,5 @@ fun AdminDashboardScreen(
         } // Added closing brace
 
         // Logout using sign out
-
     }
 }
