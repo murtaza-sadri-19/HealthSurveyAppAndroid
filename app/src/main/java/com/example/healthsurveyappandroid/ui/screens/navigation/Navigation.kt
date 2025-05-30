@@ -72,18 +72,14 @@ fun AppNavigation(
         }
         composable(Screen.AdminDashboard.route) {
             AdminDashboardScreen(
-                authViewModel = authViewModel,
                 onUserManagement = { navController.navigate(Screen.ManageUsers.route) },
                 onCreateUser = { navController.navigate(Screen.CreateUser.route) },
                 onSurveyAnalytics = { navController.navigate(Screen.SurveyAnalytics.route) },
-                onLogout = {
-                    navController.navigate(Screen.Login.route) {
-                        popUpTo(0) { inclusive = true } // clear backstack
-                    }
+                authViewModel = authViewModel,
+                onSignOut = { navController.navigate(Screen.Login.route) { popUpTo(0) { inclusive = true } }
                 }
             )
         }
-
         composable(Screen.CreateUser.route) {
             CreateUserScreen(
                 viewModel = adminViewModel
@@ -102,16 +98,15 @@ fun AppNavigation(
         composable(Screen.SurveyForm.route) {
             SurveyFormScreen(
                 surveyViewModel = surveyViewModel,
-                authViewModel = authViewModel,
                 onSubmitSuccess = { navController.navigate(Screen.Dashboard.route) },
-                onLogout = {
+                authViewModel = authViewModel,
+                onSignOut = {
                     navController.navigate(Screen.Login.route) {
-                        popUpTo(0) { inclusive = true } // clear backstack
+                        popUpTo(0) { inclusive = true }
                     }
                 }
             )
         }
-
         composable(Screen.Dashboard.route) {
             Text("Survey Submitted Successfully!")
         }

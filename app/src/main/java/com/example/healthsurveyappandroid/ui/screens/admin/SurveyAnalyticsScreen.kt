@@ -17,7 +17,9 @@ fun SurveyAnalyticsScreen(viewModel: SurveyViewModel) {
     val ageGroups = surveys.groupingBy { it.age }.eachCount()
     val genderGroups = surveys.groupingBy { it.gender }.eachCount()
     val educationGroups = surveys.groupingBy { it.highestEducation }.eachCount()
-
+    LaunchedEffect(Unit) {
+        viewModel.loadSurveys()
+    }
     LazyColumn(
         modifier = Modifier
             .fillMaxSize()
