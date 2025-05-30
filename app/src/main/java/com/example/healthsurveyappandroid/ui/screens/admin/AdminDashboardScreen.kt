@@ -50,15 +50,15 @@ fun AdminDashboardScreen(
             Text("Survey Analytics")
         }
 
-//        Button(
-//            onClick = {
-//                authViewModel.signOut()
-//                onSignOut()
-//            },
-//            modifier = Modifier.fillMaxWidth(),
-//            colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)
-//        ) {
-//            Text("Sign Out", color = MaterialTheme.colorScheme.onError)
-//        }
+        Button(
+            onClick = {
+                authViewModel.signOut()
+                onSignOut()
+            },
+            modifier = Modifier.fillMaxWidth(),
+            colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)
+        ) {
+            Text("Sign Out", color = MaterialTheme.colorScheme.onError)
+        }
     }
 }
