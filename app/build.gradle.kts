@@ -137,7 +137,7 @@ dependencies {
     implementation ("androidx.core:core-ktx:1.12.0")
 
     implementation ("androidx.compose.runtime:runtime-livedata:1.6.7")
-
+    implementation ("co.yml:ycharts:2.1.0")
 
     // Testing
     testImplementation(libs.junit)
