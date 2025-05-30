@@ -7,13 +7,16 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import com.example.healthsurveyappandroid.viewmodel.AuthViewModel
 
 // ui/screens/admin/AdminDashboardScreen.kt
 @Composable
 fun AdminDashboardScreen(
+    authViewModel: AuthViewModel,
     onUserManagement: () -> Unit,
     onCreateUser: () -> Unit,
-    onSurveyAnalytics: () -> Unit
+    onSurveyAnalytics: () -> Unit,
+    onLogout: () -> Unit
 ) {
     Column(
         modifier = Modifier
@@ -49,6 +52,18 @@ fun AdminDashboardScreen(
             Text("Survey Analytics")
         } // Added closing brace
 
-        // Logout using sign out
+        Spacer(modifier = Modifier.height(24.dp)) // Add some space
+
+        // --- Logout Button ---
+        Button(
+            onClick = {
+                authViewModel.signOut()
+                onLogout()
+            },
+            modifier = Modifier.fillMaxWidth(),
+            colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error) // it is red
+        ) {
+            Text("Logout")
+        }
     }
 }

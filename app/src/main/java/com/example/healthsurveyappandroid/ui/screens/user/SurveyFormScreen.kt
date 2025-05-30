@@ -9,12 +9,16 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.example.healthsurveyappandroid.viewmodel.SurveyViewModel
 import kotlinx.coroutines.launch
+import androidx.compose.material.icons.filled.ExitToApp
+import com.example.healthsurveyappandroid.viewmodel.AuthViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SurveyFormScreen(
     surveyViewModel: SurveyViewModel,
-    onSubmitSuccess: () -> Unit
+    authViewModel: AuthViewModel,
+    onSubmitSuccess: () -> Unit,
+    onLogout: () -> Unit
 ) {
     var step by remember { mutableStateOf(0) }
     val snackbarHostState = remember { SnackbarHostState() }
@@ -72,6 +76,15 @@ fun SurveyFormScreen(
                                 strokeWidth = 2.dp
                             )
                         }
+                    }
+                    // Logout Button
+                    IconButton(
+                        onClick = {
+                            authViewModel.signOut() // Call signOut from AuthViewModel
+                            onLogout()
+                        }
+                    ) {
+                        Icon(Icons.Filled.ExitToApp, contentDescription = "Logout")
                     }
                 }
             )
