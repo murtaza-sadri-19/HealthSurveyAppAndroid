@@ -38,7 +38,7 @@ class SheetsService(private val context: Context) {
                 survey.pinCode.orEmpty(),
                 survey.permanentAddress.orEmpty(),
                 survey.temporaryAddress.orEmpty(),
-                survey.gpsCoordinates.orEmpty(),
+                survey.run { gpsCoordinates.orEmpty() },
                 survey.disease.orEmpty(),
                 survey.bloodGroup.orEmpty(),
                 survey.samagraId.orEmpty(),
