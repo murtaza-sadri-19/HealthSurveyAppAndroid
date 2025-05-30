@@ -94,7 +94,6 @@ class SurveyViewModel(
     }
 
 
-
     fun setPhotoUris(photo: Uri?, samagra: Uri?) {
         _photoUri.value = photo
         _samagraIdUri.value = samagra
@@ -144,6 +143,7 @@ class SurveyViewModel(
             }
         }
     }
+
     private fun generateUniqueRegistrationId(): String {
         val timestampPart = System.currentTimeMillis().toString().takeLast(10) // 10 digits
         val randomPart = (100..999).random().toString()                         // 3 digits
@@ -200,9 +200,11 @@ class SurveyViewModel(
                     is SurveyRepository.SyncState.Success -> {
                         _syncStatus.value = SyncStatus.Success(result.syncedCount)
                     }
+
                     is SurveyRepository.SyncState.Error -> {
                         _syncStatus.value = SyncStatus.Error(result.message)
                     }
+
                     else -> {
                         _syncStatus.value = SyncStatus.Error("Unknown sync state")
                     }
