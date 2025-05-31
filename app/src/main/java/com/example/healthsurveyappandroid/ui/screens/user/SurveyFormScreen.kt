@@ -98,6 +98,18 @@ fun SurveyFormScreen(
                 .padding(16.dp)
         ) {
             // Survey step content
+            LinearProgressIndicator(
+                progress = { (step + 1) / 4f },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(24.dp)
+                    .padding(bottom = 16.dp),
+            )
+            Text(
+                text = "Step ${step + 1} of 4",
+                style = MaterialTheme.typography.bodyMedium,
+                modifier = Modifier.padding(bottom = 8.dp)
+            )
             when (step) {
                 0 -> PersonalDetailsPage(
                     survey = currentSurvey,

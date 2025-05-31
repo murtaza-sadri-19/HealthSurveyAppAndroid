@@ -1,35 +1,14 @@
 package com.example.healthsurveyappandroid.ui.screens.admin
 
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
-import com.example.healthsurveyappandroid.data.User
 import androidx.compose.foundation.lazy.items
-import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Button
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.DropdownMenuItem
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.ExposedDropdownMenuBox
-import androidx.compose.material3.ExposedDropdownMenuDefaults
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.livedata.observeAsState  // Ensure User has email/role/id fields
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
+import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import com.example.healthsurveyappandroid.data.User
 import com.example.healthsurveyappandroid.viewmodel.AdminViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -39,8 +18,8 @@ fun EditUserDialog(
     onDismiss: () -> Unit,
     onSave: (User) -> Unit
 ) {
-    var email by remember { mutableStateOf(user.email) }
-    var role by remember { mutableStateOf(user.role) }
+    var email by remember(user) { mutableStateOf(user.email) }
+    var role by remember(user) { mutableStateOf(user.role) }
     var isDropdownExpanded by remember { mutableStateOf(false) }
     val roles = listOf("admin", "user")
 
@@ -48,12 +27,12 @@ fun EditUserDialog(
         onDismissRequest = onDismiss,
         title = { Text(text = "Edit User") },
         text = {
-            Column(modifier = Modifier.padding(top = 8.dp)) {
+            Column(modifier = Modifier.padding(vertical = 8.dp)) {
                 OutlinedTextField(
                     value = email,
-                    onValueChange = { email = it },
+                    onValueChange = {},
                     label = { Text("Email") },
-                    readOnly = true, // Prevent direct edits
+                    readOnly = true,
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(bottom = 12.dp)
@@ -94,7 +73,8 @@ fun EditUserDialog(
         },
         confirmButton = {
             Button(onClick = {
-                onSave(user.copy(role = role))
+                val updatedUser = user.copy(role = role)
+                onSave(updatedUser)
             }) {
                 Text("Save")
             }
@@ -109,11 +89,12 @@ fun EditUserDialog(
 
 @Composable
 fun ManageUsersScreen(viewModel: AdminViewModel) {
-    val users by viewModel.users.observeAsState(initial = emptyList<User>())
+    val users by viewModel.users.observeAsState(initial = emptyList())
     var editingUser by remember { mutableStateOf<User?>(null) }
 
     LazyColumn(
         modifier = Modifier
+            .fillMaxSize()
             .padding(16.dp)
     ) {
         items(users) { user ->
@@ -148,13 +129,14 @@ fun ManageUsersScreen(viewModel: AdminViewModel) {
         }
     }
 
-    // Show edit dialog
     editingUser?.let { user ->
         EditUserDialog(
             user = user,
             onDismiss = { editingUser = null },
             onSave = { updatedUser ->
-                viewModel.updateUserRole(updatedUser.id, updatedUser.role) { _, _ -> }
+                viewModel.updateUserRole(updatedUser.id, updatedUser.role) { success, message ->
+                    // Handle callback if needed
+                }
                 editingUser = null
             }
         )
