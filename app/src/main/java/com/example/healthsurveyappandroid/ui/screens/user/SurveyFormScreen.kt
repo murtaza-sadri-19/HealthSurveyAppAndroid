@@ -9,15 +9,16 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.example.healthsurveyappandroid.viewmodel.SurveyViewModel
 import kotlinx.coroutines.launch
+import androidx.compose.material.icons.filled.ExitToApp
 import com.example.healthsurveyappandroid.viewmodel.AuthViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SurveyFormScreen(
     surveyViewModel: SurveyViewModel,
-    onSubmitSuccess: () -> Unit,
     authViewModel: AuthViewModel,
-    onSignOut: () -> Unit
+    onSubmitSuccess: () -> Unit,
+    onLogout: () -> Unit
 ) {
     var step by remember { mutableStateOf(0) }
     val snackbarHostState = remember { SnackbarHostState() }
@@ -76,6 +77,15 @@ fun SurveyFormScreen(
                             )
                         }
                     }
+                    // Logout Button
+                    IconButton(
+                        onClick = {
+                            authViewModel.signOut() // Call signOut from AuthViewModel
+                            onLogout()
+                        }
+                    ) {
+                        Icon(Icons.Filled.ExitToApp, contentDescription = "Logout")
+                    }
                 }
             )
         },
@@ -88,6 +98,18 @@ fun SurveyFormScreen(
                 .padding(16.dp)
         ) {
             // Survey step content
+            LinearProgressIndicator(
+                progress = { (step + 1) / 4f },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(24.dp)
+                    .padding(bottom = 16.dp),
+            )
+            Text(
+                text = "Step ${step + 1} of 4",
+                style = MaterialTheme.typography.bodyMedium,
+                modifier = Modifier.padding(bottom = 8.dp)
+            )
             when (step) {
                 0 -> PersonalDetailsPage(
                     survey = currentSurvey,
@@ -127,14 +149,5 @@ fun SurveyFormScreen(
             }
         }
     }
-//    Button(
-//        onClick = {
-//            authViewModel.signOut()
-//            onSignOut()
-//        },
-//        modifier = Modifier.fillMaxWidth(),
-//        colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)
-//    ) {
-//        Text("Sign Out", color = MaterialTheme.colorScheme.onError)
-//    }
 }
+

@@ -1,3 +1,21 @@
 # Default ignored files
 /shelf/
 /workspace.xml
+# Android Studio/IntelliJ IDEA
+.idea/
+*.iml
+
+# Gradle
+.gradle/
+build/
+local.properties
+
+# Generated files
+executionHistory/
+fileHashes/
+buildOutputCleanup/
+*.bin
+*.lock
+
+# Other
+*.log
