@@ -29,7 +29,7 @@ data class Survey(
     val pinCode: String = "",
     val permanentAddress: String = "",
     val temporaryAddress: String = "",
-    val gpsCoordinates: String? = null,
+    val gpsCoordinates: String? = "",
 
     // Document Upload
     val photoUrl: String = "",
