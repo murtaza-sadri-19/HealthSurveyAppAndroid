@@ -137,6 +137,4 @@ fun SurveyFormScreen(
 //    ) {
 //        Text("Sign Out", color = MaterialTheme.colorScheme.onError)
 //    }
-
 }
-
