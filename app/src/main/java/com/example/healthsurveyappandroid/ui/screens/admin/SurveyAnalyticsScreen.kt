@@ -1,39 +1,87 @@
 package com.example.healthsurveyappandroid.ui.screens.admin
 
+import android.content.ContentValues
 import android.content.Context
+import android.os.Build
 import android.os.Environment
+import android.provider.MediaStore
 import android.widget.Toast
+import androidx.annotation.RequiresApi
+import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.drawText
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.example.healthsurveyappandroid.data.Survey
 import com.example.healthsurveyappandroid.viewmodel.SurveyViewModel
-import android.content.ContentValues
-import android.os.Build
-import android.provider.MediaStore
-import androidx.annotation.RequiresApi
+import kotlinx.coroutines.launch
 import java.io.OutputStream
+import kotlin.math.*
 
 @RequiresApi(Build.VERSION_CODES.Q)
 @Composable
 fun SurveyAnalyticsScreen(viewModel: SurveyViewModel) {
-    val surveys by viewModel.surveys.collectAsState(emptyList())
-    var searchQuery by remember { mutableStateOf("") }
-    var showAnalytics by remember { mutableStateOf(false) }
     val context = LocalContext.current
+    val surveys by viewModel.surveys.collectAsState(emptyList())
+    val scope = rememberCoroutineScope()
 
-    // Filter surveys by search query
-    val filteredSurveys = surveys.filter { it.name.contains(searchQuery, ignoreCase = true) }
+    // Analytics Data with safe parsing
+    val validAges = surveys.mapNotNull { survey ->
+        try {
+            survey.age.toDoubleOrNull()?.takeIf { it > 0 }
+        } catch (e: Exception) {
+            null
+        }
+    }
 
-    // Compute analytics
-    val ageGroups = surveys.groupingBy { it.age }.eachCount()
-    val genderGroups = surveys.groupingBy { it.gender }.eachCount()
-    val educationGroups = surveys.groupingBy { it.highestEducation }.eachCount()
+    val ageGroups = surveys.groupingBy {
+        try {
+            val age = it.age.toDoubleOrNull() ?: 0.0
+            when {
+                age < 18 -> "Under 18"
+                age < 30 -> "18-29"
+                age < 45 -> "30-44"
+                age < 60 -> "45-59"
+                else -> "60+"
+            }
+        } catch (e: Exception) {
+            "Unknown"
+        }
+    }.eachCount()
+
+    val genderGroups = surveys.groupingBy { it.gender.ifEmpty { "Not Specified" } }.eachCount()
+    val educationGroups = surveys.groupingBy { it.highestEducation.ifEmpty { "Not Specified" } }.eachCount()
+    val bloodGroupGroups = surveys.groupingBy { it.bloodGroup.ifEmpty { "Not Specified" } }.eachCount()
+    val immunizationGroups = surveys.groupingBy { it.immunizationStatus.ifEmpty { "Not Specified" } }.eachCount()
+    val stateGroups = surveys.groupingBy { it.state.ifEmpty { "Not Specified" } }.eachCount()
+    val cityGroups = surveys.groupingBy { it.city.ifEmpty { "Not Specified" } }.eachCount()
+    val districtGroups = surveys.groupingBy { it.district.ifEmpty { "Not Specified" } }.eachCount()
+
+    // Disease analysis - handling multiple diseases per survey
+    val diseaseGroups = surveys.flatMap { survey ->
+        survey.disease.split(",").map { it.trim() }.filter { it.isNotEmpty() }
+    }.groupingBy { it }.eachCount()
+
+    val avgAge = if (validAges.isNotEmpty()) validAges.average().toInt() else 0
+    val maleCount = genderGroups["Male"] ?: 0
+    val femaleCount = genderGroups["Female"] ?: 0
+    val otherGenderCount = genderGroups.values.sum() - maleCount - femaleCount
 
     LaunchedEffect(Unit) {
         viewModel.loadSurveys()
@@ -42,138 +90,377 @@ fun SurveyAnalyticsScreen(viewModel: SurveyViewModel) {
     LazyColumn(
         modifier = Modifier
             .fillMaxSize()
-            .padding(16.dp),
+            .padding(16.dp)
+            .background(MaterialTheme.colorScheme.background),
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
         item {
             Text(
-                "Survey Analytics",
+                "Health Survey Dashboard",
                 style = MaterialTheme.typography.headlineMedium,
-                modifier = Modifier.padding(bottom = 8.dp)
+                fontWeight = FontWeight.Bold
             )
-            Divider()
         }
 
         item {
-            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                Button(onClick = { showAnalytics = !showAnalytics }) {
-                    Text(if (showAnalytics) "Hide Analytics" else "Show Analytics")
-                }
-                Button(onClick = {
-                    exportSurveysToCSV(context, surveys)
-                }) {
-                    Text("Export CSV")
-                }
+            Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+                DashboardCard(
+                    title = "Total Surveys",
+                    value = "${surveys.size}",
+                    modifier = Modifier.weight(1f)
+                )
+                DashboardCard(
+                    title = "Avg Age",
+                    value = if (avgAge > 0) "$avgAge" else "N/A",
+                    modifier = Modifier.weight(1f)
+                )
+                DashboardCard(
+                    title = "Gender Ratio",
+                    value = "$maleCount M / $femaleCount F" + if (otherGenderCount > 0) " / $otherGenderCount O" else "",
+                    modifier = Modifier.weight(1f)
+                )
             }
         }
 
-        if (showAnalytics) {
+        item {
+            Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+                DashboardCard(
+                    title = "States Covered",
+                    value = "${stateGroups.keys.filter { it != "Not Specified" }.size}",
+                    modifier = Modifier.weight(1f)
+                )
+                DashboardCard(
+                    title = "Cities Covered",
+                    value = "${cityGroups.keys.filter { it != "Not Specified" }.size}",
+                    modifier = Modifier.weight(1f)
+                )
+                DashboardCard(
+                    title = "Diseases Reported",
+                    value = "${diseaseGroups.size}",
+                    modifier = Modifier.weight(1f)
+                )
+            }
+        }
+
+        item {
+            SurveyBarChart("Age Distribution", ageGroups)
+        }
+
+        item {
+            SurveyPieChart("Gender Distribution", genderGroups)
+        }
+
+        item {
+            SurveyBarChart("Education Level Distribution", educationGroups)
+        }
+
+        item {
+            SurveyPieChart("Blood Group Distribution", bloodGroupGroups)
+        }
+
+        item {
+            SurveyBarChart("Immunization Status", immunizationGroups)
+        }
+
+        item {
+            SurveyBarChart("State Distribution", stateGroups.toList().sortedByDescending { it.second }.take(10).toMap())
+        }
+
+        item {
+            SurveyBarChart("Top 10 Cities", cityGroups.toList().sortedByDescending { it.second }.take(10).toMap())
+        }
+
+        item {
+            SurveyBarChart("District Distribution", districtGroups.toList().sortedByDescending { it.second }.take(10).toMap())
+        }
+
+        if (diseaseGroups.isNotEmpty()) {
             item {
-                Card(modifier = Modifier.fillMaxWidth()) {
-                    Column(modifier = Modifier.padding(16.dp)) {
-                        Text("Total Surveys", style = MaterialTheme.typography.titleMedium)
-                        Text("${surveys.size}", style = MaterialTheme.typography.headlineSmall)
+                SurveyBarChart("Common Diseases", diseaseGroups.toList().sortedByDescending { it.second }.take(15).toMap())
+            }
+        }
+
+        // Combined Age-Gender Analysis
+        item {
+            val ageGenderData = surveys.groupBy { survey ->
+                try {
+                    val age = survey.age.toDoubleOrNull() ?: 0.0
+                    val ageGroup = when {
+                        age < 18 -> "Under 18"
+                        age < 30 -> "18-29"
+                        age < 45 -> "30-44"
+                        age < 60 -> "45-59"
+                        else -> "60+"
                     }
+                    "${survey.gender.ifEmpty { "Unknown" }} ($ageGroup)"
+                } catch (e: Exception) {
+                    "Unknown"
                 }
-            }
+            }.mapValues { it.value.size }
 
-            item {
-                Text("Distribution by Age", style = MaterialTheme.typography.titleMedium)
-                Divider(modifier = Modifier.padding(vertical = 8.dp))
-            }
-            items(ageGroups.entries.toList()) { (age, count) ->
-                Text("$age: $count", style = MaterialTheme.typography.bodyLarge)
-            }
+            SurveyBarChart("Age-Gender Cross Analysis", ageGenderData)
+        }
 
-            item {
-                Spacer(modifier = Modifier.height(16.dp))
-                Text("Distribution by Gender", style = MaterialTheme.typography.titleMedium)
-                Divider(modifier = Modifier.padding(vertical = 8.dp))
-            }
-            items(genderGroups.entries.toList()) { (gender, count) ->
-                Text("$gender: $count", style = MaterialTheme.typography.bodyLarge)
-            }
+        // Education-Gender Analysis
+        item {
+            val educationGenderData = surveys.groupBy { survey ->
+                "${survey.gender.ifEmpty { "Unknown" }} - ${survey.highestEducation.ifEmpty { "Not Specified" }}"
+            }.mapValues { it.value.size }
 
-            item {
-                Spacer(modifier = Modifier.height(16.dp))
-                Text("Distribution by Education", style = MaterialTheme.typography.titleMedium)
-                Divider(modifier = Modifier.padding(vertical = 8.dp))
-            }
-            items(educationGroups.entries.toList()) { (edu, count) ->
-                Text("$edu: $count", style = MaterialTheme.typography.bodyLarge)
-            }
+            SurveyBarChart("Education-Gender Analysis", educationGenderData.toList().sortedByDescending { it.second }.take(12).toMap())
         }
 
         item {
-            Spacer(modifier = Modifier.height(16.dp))
-            OutlinedTextField(
-                value = searchQuery,
-                onValueChange = { searchQuery = it },
-                label = { Text("Search by Name") },
+            Button(
+                onClick = {
+                    scope.launch { exportSurveysToCSV(context, surveys) }
+                },
                 modifier = Modifier.fillMaxWidth()
-            )
-        }
-
-        item {
-            Spacer(modifier = Modifier.height(16.dp))
-            Text("All Submitted Surveys", style = MaterialTheme.typography.titleMedium)
-            Divider(modifier = Modifier.padding(vertical = 8.dp))
-        }
-
-        items(filteredSurveys) { survey ->
-            ExpandableSurveyCard(survey = survey)
+            ) {
+                Text("Export CSV")
+            }
         }
     }
 }
 
 @Composable
-fun ExpandableSurveyCard(survey: Survey) {
-    var expanded by remember { mutableStateOf(false) }
-
+fun DashboardCard(
+    title: String,
+    value: String,
+    modifier: Modifier = Modifier
+) {
     Card(
-        onClick = { expanded = !expanded },
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(vertical = 4.dp),
-        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+        modifier = modifier.height(100.dp),
+        elevation = CardDefaults.cardElevation(6.dp)
     ) {
-        Column(modifier = Modifier.padding(16.dp)) {
-            Text("Name: ${survey.name}", style = MaterialTheme.typography.titleMedium)
-            Text("Age: ${survey.age}, Gender: ${survey.gender}")
-            Text("City: ${survey.city}, State: ${survey.state}")
-
-            if (expanded) {
-                Spacer(modifier = Modifier.height(8.dp))
-                Divider()
-
-                Text("Registration ID: ${survey.registrationId}")
-                Text("Father's Name: ${survey.fathersName}")
-                Text("District: ${survey.district}")
-                Text("Pin Code: ${survey.pinCode}")
-                Text("Permanent Address: ${survey.permanentAddress}")
-                Text("Temporary Address: ${survey.temporaryAddress}")
-                Text("GPS: ${survey.gpsCoordinates}")
-                Text("Disease: ${survey.disease}")
-                Text("Blood Group: ${survey.bloodGroup}")
-                Text("Samagra ID: ${survey.samagraId}")
-                Text("Education: ${survey.highestEducation}")
-                Text("Immunization: ${survey.immunizationStatus}")
-                Text("Survey Date: ${survey.surveyDateTime}")
-                Text("Taker ID: ${survey.surveyTakerId}")
-                Text("Remarks: ${survey.remarks}")
-                if (survey.photoUrl.isNotEmpty()) {
-                    Text("Photo URL: ${survey.photoUrl}")
-                }
-                if (survey.samagraIdPhotoUrl.isNotEmpty()) {
-                    Text("Samagra ID Photo: ${survey.samagraIdPhotoUrl}")
-                }
-            }
-
+        Column(
+            modifier = Modifier.padding(16.dp),
+            verticalArrangement = Arrangement.SpaceBetween
+        ) {
             Text(
-                text = if (expanded) "Show Less" else "Show More",
-                style = MaterialTheme.typography.bodySmall,
+                title,
+                style = MaterialTheme.typography.labelLarge,
                 color = MaterialTheme.colorScheme.primary
             )
+            Text(
+                value,
+                style = MaterialTheme.typography.headlineSmall,
+                fontWeight = FontWeight.Bold
+            )
+        }
+    }
+}
+
+@Composable
+fun SurveyBarChart(title: String, data: Map<String, Int>) {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(300.dp),
+        elevation = CardDefaults.cardElevation(4.dp)
+    ) {
+        Column(
+            modifier = Modifier.padding(16.dp)
+        ) {
+            Text(
+                title,
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Bold
+            )
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            if (data.isNotEmpty()) {
+                BarChart(
+                    data = data,
+                    modifier = Modifier.fillMaxSize()
+                )
+            } else {
+                Box(
+                    modifier = Modifier.fillMaxSize(),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text("No data available")
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun SurveyPieChart(title: String, data: Map<String, Int>) {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(320.dp),
+        elevation = CardDefaults.cardElevation(4.dp)
+    ) {
+        Column(
+            modifier = Modifier.padding(16.dp)
+        ) {
+            Text(
+                title,
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Bold
+            )
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            if (data.isNotEmpty()) {
+                Row {
+                    PieChart(
+                        data = data,
+                        modifier = Modifier
+                            .size(200.dp)
+                            .weight(1f)
+                    )
+
+                    // Legend
+                    Column(
+                        modifier = Modifier.weight(1f),
+                        verticalArrangement = Arrangement.Center
+                    ) {
+                        val colors = listOf(
+                            Color(0xFF6366F1),
+                            Color(0xFF8B5CF6),
+                            Color(0xFF06B6D4),
+                            Color(0xFF10B981),
+                            Color(0xFFF59E0B),
+                            Color(0xFFEF4444),
+                            Color(0xFF84CC16),
+                            Color(0xFF6B7280)
+                        )
+
+                        data.entries.forEachIndexed { index, entry ->
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                modifier = Modifier.padding(vertical = 2.dp)
+                            ) {
+                                Box(
+                                    modifier = Modifier
+                                        .size(12.dp)
+                                        .clip(RoundedCornerShape(2.dp))
+                                        .background(colors[index % colors.size])
+                                )
+                                Spacer(modifier = Modifier.width(6.dp))
+                                Text(
+                                    "${entry.key.take(15)}: ${entry.value}",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    fontSize = 10.sp
+                                )
+                            }
+                        }
+                    }
+                }
+            } else {
+                Box(
+                    modifier = Modifier.fillMaxSize(),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text("No data available")
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun BarChart(
+    data: Map<String, Int>,
+    modifier: Modifier = Modifier
+) {
+    val textMeasurer = rememberTextMeasurer()
+    val maxValue = data.values.maxOrNull() ?: 1
+    val colors = listOf(
+        Color(0xFF6366F1),
+        Color(0xFF8B5CF6),
+        Color(0xFF06B6D4),
+        Color(0xFF10B981),
+        Color(0xFFF59E0B),
+        Color(0xFFEF4444),
+        Color(0xFF84CC16),
+        Color(0xFF6B7280)
+    )
+
+    Canvas(modifier = modifier) {
+        if (data.isEmpty()) return@Canvas
+
+        val barWidth = size.width / (data.size * 1.5f)
+        val barSpacing = barWidth * 0.5f
+        val chartHeight = size.height - 80.dp.toPx() // Leave more space for labels
+
+        data.entries.forEachIndexed { index, entry ->
+            val barHeight = (entry.value.toFloat() / maxValue) * chartHeight
+            val x = index * (barWidth + barSpacing) + barSpacing
+
+            // Draw bar
+            drawRect(
+                color = colors[index % colors.size],
+                topLeft = Offset(x, chartHeight - barHeight),
+                size = Size(barWidth, barHeight)
+            )
+
+            // Draw value on top of bar
+            drawText(
+                textMeasurer = textMeasurer,
+                text = entry.value.toString(),
+                topLeft = Offset(
+                    x + barWidth / 2 - 10.dp.toPx(),
+                    maxOf(0f, chartHeight - barHeight - 25.dp.toPx())
+                )
+            )
+
+            // Draw label below bar (truncated and rotated for better fit)
+            val labelText = if (entry.key.length > 10) "${entry.key.take(8)}..." else entry.key
+            drawText(
+                textMeasurer = textMeasurer,
+                text = labelText,
+                topLeft = Offset(
+                    x + barWidth / 2 - 20.dp.toPx(),
+                    chartHeight + 10.dp.toPx()
+                )
+            )
+        }
+    }
+}
+
+@Composable
+fun PieChart(
+    data: Map<String, Int>,
+    modifier: Modifier = Modifier
+) {
+    val total = data.values.sum().toFloat()
+    if (total == 0f) return
+
+    val colors = listOf(
+        Color(0xFF6366F1),
+        Color(0xFF8B5CF6),
+        Color(0xFF06B6D4),
+        Color(0xFF10B981),
+        Color(0xFFF59E0B),
+        Color(0xFFEF4444),
+        Color(0xFF84CC16),
+        Color(0xFF6B7280)
+    )
+
+    Canvas(modifier = modifier) {
+        val center = Offset(size.width / 2, size.height / 2)
+        val radius = minOf(size.width, size.height) / 2.5f
+        var currentAngle = -90f // Start from top
+
+        data.entries.forEachIndexed { index, entry ->
+            val sweepAngle = (entry.value / total) * 360f
+
+            drawArc(
+                color = colors[index % colors.size],
+                startAngle = currentAngle,
+                sweepAngle = sweepAngle,
+                useCenter = true,
+                topLeft = Offset(center.x - radius, center.y - radius),
+                size = Size(radius * 2, radius * 2)
+            )
+
+            currentAngle += sweepAngle
         }
     }
 }
@@ -196,7 +483,8 @@ fun exportSurveysToCSV(context: Context, surveys: List<Survey>) {
 
         val resolver = context.contentResolver
         val collection = MediaStore.Downloads.getContentUri(MediaStore.VOLUME_EXTERNAL_PRIMARY)
-        val uri = resolver.insert(collection, contentValues) ?: throw Exception("Failed to create file URI")
+        val uri = resolver.insert(collection, contentValues)
+            ?: throw Exception("Failed to create file URI")
 
         resolver.openOutputStream(uri)?.use { outputStream ->
             writeSurveysToCSV(outputStream, surveys)

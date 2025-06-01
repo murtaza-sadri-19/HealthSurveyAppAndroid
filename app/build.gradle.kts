@@ -75,7 +75,10 @@ configurations.all {
         force("org.jetbrains.kotlinx:kotlinx-metadata-jvm:0.7.0")
     }
 }
-
+repositories {
+    google()
+    mavenCentral()
+}
 dependencies {
     // Core Android
     implementation(libs.androidx.core.ktx)
@@ -97,10 +100,11 @@ dependencies {
     implementation("org.jetbrains.kotlinx:kotlinx-metadata-jvm:0.7.0")
 
     // Room Database
-    implementation("androidx.room:room-runtime:2.6.1")
+    implementation("androidx.room:room-runtime:2.7.1")
     implementation(libs.identity.jvm)
-    kapt("androidx.room:room-compiler:2.6.1")
-    implementation("androidx.room:room-ktx:2.6.1")
+    //noinspection KaptUsageInsteadOfKsp
+    kapt("androidx.room:room-compiler:2.7.1")
+    implementation("androidx.room:room-ktx:2.7.1")
 
     // Network
     implementation(libs.retrofit)
@@ -120,7 +124,7 @@ dependencies {
     implementation("com.google.firebase:firebase-analytics-ktx")
 
     // WorkManager
-    implementation("androidx.work:work-runtime-ktx:2.9.0")
+    implementation("androidx.work:work-runtime-ktx:2.10.1")
 
     // Google Sheets API
     implementation("com.google.api-client:google-api-client-android:2.2.0")
@@ -134,10 +138,14 @@ dependencies {
 
     implementation ("com.google.android.gms:play-services-location:21.0.1")
     implementation ("androidx.activity:activity-compose:1.8.0")
-    implementation ("androidx.core:core-ktx:1.12.0")
+    implementation (libs.androidx.core.ktx)
 
-    implementation ("androidx.compose.runtime:runtime-livedata:1.6.7")
-    implementation ("co.yml:ycharts:2.1.0")
+    implementation ("androidx.compose.runtime:runtime-livedata:1.8.2")
+
+    implementation("com.patrykandpatrick.vico:compose:1.13.0")
+    implementation("com.patrykandpatrick.vico:core:1.13.0")
+    implementation("com.patrykandpatrick.vico:compose-m3:1.13.0")
+    implementation ("io.github.ehsannarmani:compose-charts:0.0.13")
 
     // Testing
     testImplementation(libs.junit)
@@ -149,6 +157,4 @@ dependencies {
     // Debug
     debugImplementation(libs.androidx.ui.tooling)
     debugImplementation(libs.androidx.ui.test.manifest)
-
-
 }
