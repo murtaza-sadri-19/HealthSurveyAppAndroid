@@ -4,6 +4,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.*
+import androidx.compose.material3.ExposedDropdownMenuDefaults.TrailingIcon
 import androidx.compose.runtime.*
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.ui.Modifier
@@ -18,8 +19,8 @@ fun EditUserDialog(
     onDismiss: () -> Unit,
     onSave: (User) -> Unit
 ) {
-    var email by remember(user) { mutableStateOf(user.email) }
-    var role by remember(user) { mutableStateOf(user.role) }
+    var email by remember(user) { mutableStateOf(user.email ?: "") }
+    var role by remember(user) { mutableStateOf(user.role ?: "") }
     var isDropdownExpanded by remember { mutableStateOf(false) }
     val roles = listOf("admin", "user")
 
@@ -30,7 +31,7 @@ fun EditUserDialog(
             Column(modifier = Modifier.padding(vertical = 8.dp)) {
                 OutlinedTextField(
                     value = email,
-                    onValueChange = {},
+                    onValueChange = {}, // Read-only field
                     label = { Text("Email") },
                     readOnly = true,
                     modifier = Modifier
@@ -48,7 +49,7 @@ fun EditUserDialog(
                         onValueChange = {},
                         label = { Text("Role") },
                         trailingIcon = {
-                            ExposedDropdownMenuDefaults.TrailingIcon(expanded = isDropdownExpanded)
+                            TrailingIcon(expanded = isDropdownExpanded)
                         },
                         modifier = Modifier
                             .fillMaxWidth()
@@ -106,8 +107,8 @@ fun ManageUsersScreen(viewModel: AdminViewModel) {
                 shape = MaterialTheme.shapes.medium
             ) {
                 Column(modifier = Modifier.padding(16.dp)) {
-                    Text("Email: ${user.email}", style = MaterialTheme.typography.bodyLarge)
-                    Text("Role: ${user.role}", style = MaterialTheme.typography.bodyMedium)
+                    Text("Email: ${user.email ?: "N/A"}", style = MaterialTheme.typography.bodyLarge)
+                    Text("Role: ${user.role ?: "N/A"}", style = MaterialTheme.typography.bodyMedium)
                     Spacer(modifier = Modifier.height(12.dp))
                     Row {
                         Button(
@@ -134,8 +135,8 @@ fun ManageUsersScreen(viewModel: AdminViewModel) {
             user = user,
             onDismiss = { editingUser = null },
             onSave = { updatedUser ->
-                viewModel.updateUserRole(updatedUser.id, updatedUser.role) { success, message ->
-                    // Handle callback if needed
+                viewModel.updateUserRole(updatedUser.id, updatedUser.role ?: "user") { success, message ->
+                    // You can add toast/snackbar here if needed
                 }
                 editingUser = null
             }

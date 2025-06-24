@@ -4,7 +4,6 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.healthsurveyappandroid.data.User
 import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.auth.UserProfileChangeRequest
 import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -44,7 +43,7 @@ class AuthViewModel : ViewModel() {
                         id = currentUser?.uid ?: "",
                         email = email,
                         name = currentUser?.displayName ?: "",
-                        role = role ?: "user"
+                        role = role
                     )
                     _authState.value = AuthState(user = user)
                     onResult(true, null)
