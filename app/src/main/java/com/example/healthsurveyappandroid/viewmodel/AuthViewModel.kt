@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.healthsurveyappandroid.data.User
 import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.auth.GoogleAuthProvider
 import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -20,7 +21,6 @@ data class AuthState(
 )
 
 class AuthViewModel : ViewModel() {
-
     private val auth: FirebaseAuth = FirebaseAuth.getInstance()
     private val firestore: FirebaseFirestore = FirebaseFirestore.getInstance()
     private val usersCollection = firestore.collection("users")
@@ -29,9 +29,6 @@ class AuthViewModel : ViewModel() {
     val authState: StateFlow<AuthState> = _authState.asStateFlow()
 
     val currentUser get() = auth.currentUser
-
-    // Public registration is disabled; only admin can create users.
-    // The registerUser function can be kept for admin use only, or removed from UI.
 
     fun loginUser(email: String, password: String, onResult: (Boolean, String?) -> Unit) {
         viewModelScope.launch {
@@ -43,7 +40,40 @@ class AuthViewModel : ViewModel() {
                         id = currentUser?.uid ?: "",
                         email = email,
                         name = currentUser?.displayName ?: "",
-                        role = role
+                        role = role ?: "user"
+                    )
+                    _authState.value = AuthState(user = user)
+                    onResult(true, null)
+                }
+            } catch (e: Exception) {
+                _authState.value = AuthState(error = e.message)
+                onResult(false, e.message)
+            }
+        }
+    }
+
+    fun sendPasswordResetEmail(email: String, onResult: (Boolean, String?) -> Unit) {
+        viewModelScope.launch {
+            try {
+                auth.sendPasswordResetEmail(email).await()
+                onResult(true, null)
+            } catch (e: Exception) {
+                onResult(false, e.message)
+            }
+        }
+    }
+
+    fun firebaseAuthWithGoogle(idToken: String, onResult: (Boolean, String?) -> Unit) {
+        viewModelScope.launch {
+            val credential = GoogleAuthProvider.getCredential(idToken, null)
+            try {
+                auth.signInWithCredential(credential).await()
+                fetchUserRole { role ->
+                    val user = User(
+                        id = currentUser?.uid ?: "",
+                        email = currentUser?.email ?: "",
+                        name = currentUser?.displayName ?: "",
+                        role = role ?: "user"
                     )
                     _authState.value = AuthState(user = user)
                     onResult(true, null)
@@ -61,15 +91,12 @@ class AuthViewModel : ViewModel() {
             onResult(null)
             return
         }
-
         viewModelScope.launch {
             try {
                 val document = usersCollection.document(uid).get().await()
                 val role = document.getString("role")
-                println("Fetched role: $role") // Debug log
                 onResult(role)
             } catch (e: Exception) {
-                e.printStackTrace()
                 onResult(null)
             }
         }
