@@ -1,10 +1,31 @@
 package com.example.healthsurveyappandroid.ui.screens.auth
 
 import android.widget.Toast
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material3.Button
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -20,12 +41,15 @@ fun LoginScreen(
     viewModel: AuthViewModel,
     onNavigateToRegister: () -> Unit,
     onNavigateToAdmin: () -> Unit,
-    onNavigateToUser: () -> Unit
+    onNavigateToUser: () -> Unit,
+    onNavigateToForgotPassword: () -> Unit,
+    onGoogleSignIn: () -> Unit
 ) {
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var isLoading by remember { mutableStateOf(false) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
+
     val snackbarHostState = remember { SnackbarHostState() }
     val coroutineScope = rememberCoroutineScope()
     val context = LocalContext.current
@@ -33,12 +57,14 @@ fun LoginScreen(
     LaunchedEffect(viewModel.authState) {
         viewModel.authState.collect { state ->
             state.user?.let { user ->
-                println("User role in LoginScreen: ${user.role}")
                 Toast.makeText(context, "User role: ${user.role}", Toast.LENGTH_SHORT).show()
                 when (user.role) {
                     "admin" -> onNavigateToAdmin()
                     else -> onNavigateToUser()
                 }
+            }
+            state.error?.let { error ->
+                errorMessage = error
             }
         }
     }
@@ -68,6 +94,7 @@ fun LoginScreen(
                 style = MaterialTheme.typography.headlineMedium,
                 modifier = Modifier.padding(bottom = 24.dp)
             )
+
             OutlinedTextField(
                 value = email,
                 onValueChange = { email = it },
@@ -81,6 +108,7 @@ fun LoginScreen(
                     .padding(bottom = 16.dp),
                 singleLine = true
             )
+
             OutlinedTextField(
                 value = password,
                 onValueChange = { password = it },
@@ -92,9 +120,17 @@ fun LoginScreen(
                 ),
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(bottom = 24.dp),
+                    .padding(bottom = 8.dp),
                 singleLine = true
             )
+
+            TextButton(
+                onClick = { onNavigateToForgotPassword() },
+                modifier = Modifier.align(Alignment.End)
+            ) {
+                Text("Forgot Password?")
+            }
+
             Button(
                 onClick = {
                     isLoading = true
@@ -107,7 +143,8 @@ fun LoginScreen(
                 },
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(50.dp),
+                    .height(50.dp)
+                    .padding(top = 8.dp),
                 enabled = !isLoading
             ) {
                 if (isLoading) {
@@ -118,6 +155,25 @@ fun LoginScreen(
                 } else {
                     Text("Login")
                 }
+            }
+
+            Button(
+                onClick = { onGoogleSignIn() },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(50.dp)
+                    .padding(top = 16.dp)
+            ) {
+                Text("Sign in with Google")
+            }
+
+            Spacer(modifier = Modifier.height(12.dp))
+
+            TextButton(
+                onClick = { onNavigateToRegister() },
+                modifier = Modifier.align(Alignment.CenterHorizontally)
+            ) {
+                Text("Don't have an account? Register")
             }
         }
     }

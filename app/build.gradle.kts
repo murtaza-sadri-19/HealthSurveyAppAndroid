@@ -12,7 +12,7 @@ android {
 
     defaultConfig {
         applicationId = "com.example.healthsurveyappandroid"
-        minSdk = 26
+        minSdk = 30
         targetSdk = 35
         versionCode = 1
         versionName = "1.0"
@@ -146,6 +146,9 @@ dependencies {
     implementation("com.patrykandpatrick.vico:core:1.13.0")
     implementation("com.patrykandpatrick.vico:compose-m3:1.13.0")
     implementation ("io.github.ehsannarmani:compose-charts:0.0.13")
+    implementation ("com.google.android.gms:play-services-auth:20.6.0")
+    implementation ("androidx.appcompat:appcompat:1.6.1")
+
 
     // Testing
     testImplementation(libs.junit)
