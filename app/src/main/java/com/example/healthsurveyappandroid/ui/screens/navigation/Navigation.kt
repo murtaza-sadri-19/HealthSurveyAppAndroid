@@ -64,13 +64,14 @@ fun AppNavigation(
                 onNavigateToAdmin = { navController.navigate(Screen.AdminDashboard.route) },
                 onNavigateToUser = { navController.navigate(Screen.SurveyForm.route) },
                 onNavigateToForgotPassword = { navController.navigate(Screen.ForgotPassword.route) },
-                onGoogleSignIn = { navController.navigate(Screen.ForgotPassword.route)}
+                onGoogleSignIn = {
+                    // You can call your Google Sign-In logic here
+                }
             )
         }
 
         composable(Screen.ForgotPassword.route) {
             ForgotPasswordScreen(
-                viewModel = authViewModel,
                 onPasswordResetSent = { navController.popBackStack() },
                 onBack = { navController.popBackStack() }
             )

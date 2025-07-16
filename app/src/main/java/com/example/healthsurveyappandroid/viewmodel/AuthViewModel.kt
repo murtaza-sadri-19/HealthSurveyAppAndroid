@@ -4,15 +4,12 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.healthsurveyappandroid.data.User
 import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.auth.GoogleAuthProvider
 import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
-
-enum class NavigationState { AUTH, USER, ADMIN }
 
 data class AuthState(
     val user: User? = null,
@@ -21,6 +18,7 @@ data class AuthState(
 )
 
 class AuthViewModel : ViewModel() {
+
     private val auth: FirebaseAuth = FirebaseAuth.getInstance()
     private val firestore: FirebaseFirestore = FirebaseFirestore.getInstance()
     private val usersCollection = firestore.collection("users")
@@ -30,7 +28,11 @@ class AuthViewModel : ViewModel() {
 
     val currentUser get() = auth.currentUser
 
-    fun loginUser(email: String, password: String, onResult: (Boolean, String?) -> Unit) {
+    fun loginUser(
+        email: String,
+        password: String,
+        onResult: (Boolean, String?, User?) -> Unit
+    ) {
         viewModelScope.launch {
             _authState.value = AuthState(isLoading = true)
             try {
@@ -43,44 +45,11 @@ class AuthViewModel : ViewModel() {
                         role = role ?: "user"
                     )
                     _authState.value = AuthState(user = user)
-                    onResult(true, null)
+                    onResult(true, null, user)
                 }
             } catch (e: Exception) {
                 _authState.value = AuthState(error = e.message)
-                onResult(false, e.message)
-            }
-        }
-    }
-
-    fun sendPasswordResetEmail(email: String, onResult: (Boolean, String?) -> Unit) {
-        viewModelScope.launch {
-            try {
-                auth.sendPasswordResetEmail(email).await()
-                onResult(true, null)
-            } catch (e: Exception) {
-                onResult(false, e.message)
-            }
-        }
-    }
-
-    fun firebaseAuthWithGoogle(idToken: String, onResult: (Boolean, String?) -> Unit) {
-        viewModelScope.launch {
-            val credential = GoogleAuthProvider.getCredential(idToken, null)
-            try {
-                auth.signInWithCredential(credential).await()
-                fetchUserRole { role ->
-                    val user = User(
-                        id = currentUser?.uid ?: "",
-                        email = currentUser?.email ?: "",
-                        name = currentUser?.displayName ?: "",
-                        role = role ?: "user"
-                    )
-                    _authState.value = AuthState(user = user)
-                    onResult(true, null)
-                }
-            } catch (e: Exception) {
-                _authState.value = AuthState(error = e.message)
-                onResult(false, e.message)
+                onResult(false, e.message, null)
             }
         }
     }
@@ -91,12 +60,15 @@ class AuthViewModel : ViewModel() {
             onResult(null)
             return
         }
+
         viewModelScope.launch {
             try {
                 val document = usersCollection.document(uid).get().await()
                 val role = document.getString("role")
+                println("Fetched role: $role") // Debug log
                 onResult(role)
             } catch (e: Exception) {
+                e.printStackTrace()
                 onResult(null)
             }
         }
