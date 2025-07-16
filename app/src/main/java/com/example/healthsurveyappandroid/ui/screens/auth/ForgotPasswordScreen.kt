@@ -1,36 +1,19 @@
 package com.example.healthsurveyappandroid.ui.screens.auth
 
 import android.widget.Toast
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.material3.Button
-import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
-import com.example.healthsurveyappandroid.viewmodel.AuthViewModel
+import com.google.firebase.auth.FirebaseAuth
 
 @Composable
 fun ForgotPasswordScreen(
-    viewModel: AuthViewModel,
     onPasswordResetSent: () -> Unit,
     onBack: () -> Unit
 ) {
@@ -48,6 +31,7 @@ fun ForgotPasswordScreen(
     ) {
         Text("Reset Password", style = MaterialTheme.typography.headlineMedium)
         Spacer(Modifier.height(24.dp))
+
         OutlinedTextField(
             value = email,
             onValueChange = { email = it },
@@ -55,19 +39,25 @@ fun ForgotPasswordScreen(
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
             modifier = Modifier.fillMaxWidth()
         )
+
         Spacer(Modifier.height(16.dp))
+
         Button(
             onClick = {
                 isLoading = true
-                viewModel.sendPasswordResetEmail(email) { success, error ->
-                    isLoading = false
-                    if (success) {
-                        Toast.makeText(context, "Password reset email sent.", Toast.LENGTH_SHORT).show()
-                        onPasswordResetSent()
-                    } else {
-                        errorMessage = error ?: "Failed to send reset email"
+                errorMessage = null
+
+                val auth = FirebaseAuth.getInstance()
+                auth.sendPasswordResetEmail(email.trim())
+                    .addOnCompleteListener { task ->
+                        isLoading = false
+                        if (task.isSuccessful) {
+                            Toast.makeText(context, "Password reset email sent.", Toast.LENGTH_SHORT).show()
+                            onPasswordResetSent()
+                        } else {
+                            errorMessage = task.exception?.message ?: "Failed to send reset email"
+                        }
                     }
-                }
             },
             enabled = !isLoading && email.isNotBlank(),
             modifier = Modifier.fillMaxWidth()
@@ -78,11 +68,14 @@ fun ForgotPasswordScreen(
                 Text("Send Reset Email")
             }
         }
+
         errorMessage?.let {
             Spacer(Modifier.height(8.dp))
             Text(it, color = MaterialTheme.colorScheme.error)
         }
+
         Spacer(Modifier.height(16.dp))
+
         TextButton(onClick = { onBack() }) {
             Text("Back to Login")
         }

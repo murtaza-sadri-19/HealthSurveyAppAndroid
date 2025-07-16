@@ -1,39 +1,20 @@
 package com.example.healthsurveyappandroid.ui.screens.auth
 
 import android.widget.Toast
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.material3.Button
-import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.SnackbarHost
-import androidx.compose.material3.SnackbarHostState
-import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.setValue
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Visibility
+import androidx.compose.material.icons.filled.VisibilityOff
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.text.input.ImeAction
-import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.text.input.*
 import androidx.compose.ui.unit.dp
 import com.example.healthsurveyappandroid.viewmodel.AuthViewModel
+import com.example.healthsurveyappandroid.data.User
 import kotlinx.coroutines.launch
 
 @Composable
@@ -49,25 +30,15 @@ fun LoginScreen(
     var password by remember { mutableStateOf("") }
     var isLoading by remember { mutableStateOf(false) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
+    var isPasswordVisible by remember { mutableStateOf(false) }
 
     val snackbarHostState = remember { SnackbarHostState() }
     val coroutineScope = rememberCoroutineScope()
     val context = LocalContext.current
 
-    LaunchedEffect(viewModel.authState) {
-        viewModel.authState.collect { state ->
-            state.user?.let { user ->
-                Toast.makeText(context, "User role: ${user.role}", Toast.LENGTH_SHORT).show()
-                when (user.role) {
-                    "admin" -> onNavigateToAdmin()
-                    else -> onNavigateToUser()
-                }
-            }
-            state.error?.let { error ->
-                errorMessage = error
-            }
-        }
-    }
+    val tabs = listOf("User Login", "Admin Login")
+    var selectedTabIndex by remember { mutableStateOf(0) }
+    val expectedRole = if (selectedTabIndex == 0) "user" else "admin"
 
     LaunchedEffect(errorMessage) {
         errorMessage?.let {
@@ -90,10 +61,26 @@ fun LoginScreen(
             verticalArrangement = Arrangement.Center
         ) {
             Text(
-                text = "Login",
+                text = tabs[selectedTabIndex],
                 style = MaterialTheme.typography.headlineMedium,
-                modifier = Modifier.padding(bottom = 24.dp)
+                modifier = Modifier.padding(bottom = 16.dp)
             )
+
+            // Tab Row
+            TabRow(
+                selectedTabIndex = selectedTabIndex,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = 24.dp)
+            ) {
+                tabs.forEachIndexed { index, title ->
+                    Tab(
+                        selected = selectedTabIndex == index,
+                        onClick = { selectedTabIndex = index },
+                        text = { Text(title) }
+                    )
+                }
+            }
 
             OutlinedTextField(
                 value = email,
@@ -113,11 +100,19 @@ fun LoginScreen(
                 value = password,
                 onValueChange = { password = it },
                 label = { Text("Password") },
-                visualTransformation = PasswordVisualTransformation(),
+                visualTransformation = if (isPasswordVisible) VisualTransformation.None else PasswordVisualTransformation(),
                 keyboardOptions = KeyboardOptions(
                     keyboardType = KeyboardType.Password,
                     imeAction = ImeAction.Done
                 ),
+                trailingIcon = {
+                    IconButton(onClick = { isPasswordVisible = !isPasswordVisible }) {
+                        Icon(
+                            imageVector = if (isPasswordVisible) Icons.Filled.Visibility else Icons.Filled.VisibilityOff,
+                            contentDescription = null
+                        )
+                    }
+                },
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(bottom = 8.dp),
@@ -134,10 +129,19 @@ fun LoginScreen(
             Button(
                 onClick = {
                     isLoading = true
-                    viewModel.loginUser(email, password) { success, error ->
+                    viewModel.loginUser(email, password) { success, error, user ->
                         isLoading = false
                         if (!success) {
                             errorMessage = error ?: "Login failed"
+                        } else if (user?.role != expectedRole) {
+                            errorMessage = "You are not allowed to log in as ${tabs[selectedTabIndex]}"
+                            viewModel.signOut()
+                        } else {
+                            when (user.role) {
+                                "admin" -> onNavigateToAdmin()
+                                "user" -> onNavigateToUser()
+                                else -> errorMessage = "Unknown role"
+                            }
                         }
                     }
                 },
@@ -153,7 +157,7 @@ fun LoginScreen(
                         color = MaterialTheme.colorScheme.onPrimary
                     )
                 } else {
-                    Text("Login")
+                    Text("Login as ${expectedRole.capitalize()}")
                 }
             }
 
