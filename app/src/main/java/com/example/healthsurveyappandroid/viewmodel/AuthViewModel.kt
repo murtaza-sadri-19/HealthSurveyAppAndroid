@@ -4,15 +4,12 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.healthsurveyappandroid.data.User
 import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.auth.UserProfileChangeRequest
 import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
-
-enum class NavigationState { AUTH, USER, ADMIN }
 
 data class AuthState(
     val user: User? = null,
@@ -31,10 +28,11 @@ class AuthViewModel : ViewModel() {
 
     val currentUser get() = auth.currentUser
 
-    // Public registration is disabled; only admin can create users.
-    // The registerUser function can be kept for admin use only, or removed from UI.
-
-    fun loginUser(email: String, password: String, onResult: (Boolean, String?) -> Unit) {
+    fun loginUser(
+        email: String,
+        password: String,
+        onResult: (Boolean, String?, User?) -> Unit
+    ) {
         viewModelScope.launch {
             _authState.value = AuthState(isLoading = true)
             try {
@@ -47,11 +45,11 @@ class AuthViewModel : ViewModel() {
                         role = role ?: "user"
                     )
                     _authState.value = AuthState(user = user)
-                    onResult(true, null)
+                    onResult(true, null, user)
                 }
             } catch (e: Exception) {
                 _authState.value = AuthState(error = e.message)
-                onResult(false, e.message)
+                onResult(false, e.message, null)
             }
         }
     }
