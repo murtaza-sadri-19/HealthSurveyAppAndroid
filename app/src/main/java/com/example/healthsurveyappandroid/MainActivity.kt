@@ -9,39 +9,27 @@ import androidx.compose.material3.Surface
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.healthsurveyappandroid.data.SurveyDatabase
+import com.example.healthsurveyappandroid.location.LocationClient
 import com.example.healthsurveyappandroid.location.LocationClientImpl
 import com.example.healthsurveyappandroid.network.SheetsService
 import com.example.healthsurveyappandroid.repository.SurveyRepository
 import com.example.healthsurveyappandroid.ui.screens.navigation.AppNavigation
 import com.example.healthsurveyappandroid.ui.theme.HealthSurveyAppAndroidTheme
+import com.example.healthsurveyappandroid.utils.GoogleSignInManager
 import com.example.healthsurveyappandroid.viewmodel.AdminViewModel
 import com.example.healthsurveyappandroid.viewmodel.AuthViewModel
-import com.example.healthsurveyappandroid.location.LocationClient
 import com.example.healthsurveyappandroid.viewmodel.SurveyViewModel
-import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.firestore.FirebaseFirestore
 
 class MainActivity : ComponentActivity() {
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        // Initialize Firebase services
-        FirebaseAuth.getInstance()
-        FirebaseFirestore.getInstance()
-
-        // Initialize Room database and DAO
         val database = SurveyDatabase.getDatabase(applicationContext)
         val surveyDao = database.surveyDao()
-
-        // Initialize location client
         val locationClient: LocationClient = LocationClientImpl(applicationContext)
-
-        // Use application context for SheetsService to prevent leaks
         val sheetsService = SheetsService(applicationContext)
-        val repository = SurveyRepository(
-            sheetsService,
-            surveyDao = surveyDao
-        )
+        val repository = SurveyRepository(sheetsService, surveyDao)
 
         setContent {
             HealthSurveyAppAndroidTheme {
@@ -51,20 +39,24 @@ class MainActivity : ComponentActivity() {
                 ) {
                     val authViewModel: AuthViewModel = viewModel()
                     val adminViewModel: AdminViewModel = viewModel()
-
-                    // Proper ViewModel initialization with factory
                     val surveyViewModel: SurveyViewModel = viewModel(
                         factory = SurveyViewModelFactory(repository, locationClient)
                     )
+                    val google = GoogleSignInManager
 
-                    AppNavigation(authViewModel, surveyViewModel, adminViewModel)
+                    // No need to pass `GoogleSignInManager` here — used directly in LoginScreen
+                    AppNavigation(
+                        authViewModel = authViewModel,
+                        surveyViewModel = surveyViewModel,
+                        adminViewModel = adminViewModel,
+                        googleSignIn = google
+                    )
                 }
             }
         }
     }
 }
 
-// Add ViewModel Factory for proper dependency injection
 class SurveyViewModelFactory(
     private val repository: SurveyRepository,
     private val locationClient: LocationClient
@@ -72,9 +64,7 @@ class SurveyViewModelFactory(
     override fun <T : androidx.lifecycle.ViewModel> create(modelClass: Class<T>): T {
         if (modelClass.isAssignableFrom(SurveyViewModel::class.java)) {
             @Suppress("UNCHECKED_CAST")
-            return SurveyViewModel(repository,
-                locationClient as com.example.healthsurveyappandroid.location.LocationClient
-            ) as T
+            return SurveyViewModel(repository, locationClient) as T
         }
         throw IllegalArgumentException("Unknown ViewModel class")
     }

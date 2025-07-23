@@ -1,21 +1,54 @@
 package com.example.healthsurveyappandroid.ui.screens.auth
 
-import android.widget.Toast
-import androidx.compose.foundation.layout.*
+import android.app.Activity
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material3.Button
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.Tab
+import androidx.compose.material3.TabRow
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.text.input.*
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
+import com.example.healthsurveyappandroid.R
+import com.example.healthsurveyappandroid.utils.GoogleSignInManager
 import com.example.healthsurveyappandroid.viewmodel.AuthViewModel
-import com.example.healthsurveyappandroid.data.User
 import kotlinx.coroutines.launch
+import java.util.Locale
 
 @Composable
 fun LoginScreen(
@@ -23,8 +56,7 @@ fun LoginScreen(
     onNavigateToRegister: () -> Unit,
     onNavigateToAdmin: () -> Unit,
     onNavigateToUser: () -> Unit,
-    onNavigateToForgotPassword: () -> Unit,
-    onGoogleSignIn: () -> Unit
+    onNavigateToForgotPassword: () -> Unit
 ) {
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
@@ -34,11 +66,43 @@ fun LoginScreen(
 
     val snackbarHostState = remember { SnackbarHostState() }
     val coroutineScope = rememberCoroutineScope()
-    val context = LocalContext.current
 
     val tabs = listOf("User Login", "Admin Login")
     var selectedTabIndex by remember { mutableStateOf(0) }
     val expectedRole = if (selectedTabIndex == 0) "user" else "admin"
+
+    val context = LocalContext.current
+    val activity = context as Activity
+    val webClientId = stringResource(id = R.string.default_web_client_id)
+    val googleSignInClient = remember { GoogleSignInManager.getClient(context, webClientId) }
+
+    val launcher = rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+        val credential = GoogleSignInManager.getCredentialFromIntent(result.data)
+        if (credential != null) {
+            viewModel.signInWithGoogleCredential(credential) { success, error ->
+                if (!success) {
+                    coroutineScope.launch {
+                        snackbarHostState.showSnackbar(error ?: "Google Sign-In failed")
+                    }
+                } else {
+                    val user = viewModel.authState.value.user
+                    when (user?.role) {
+                        "admin" -> onNavigateToAdmin()
+                        "user" -> onNavigateToUser()
+                        else -> {
+                            coroutineScope.launch {
+                                snackbarHostState.showSnackbar("Unknown role: ${user?.role}")
+                            }
+                        }
+                    }
+                }
+            }
+        } else {
+            coroutineScope.launch {
+                snackbarHostState.showSnackbar("Google Sign-In cancelled or failed.")
+            }
+        }
+    }
 
     LaunchedEffect(errorMessage) {
         errorMessage?.let {
@@ -66,7 +130,6 @@ fun LoginScreen(
                 modifier = Modifier.padding(bottom = 16.dp)
             )
 
-            // Tab Row
             TabRow(
                 selectedTabIndex = selectedTabIndex,
                 modifier = Modifier
@@ -108,7 +171,7 @@ fun LoginScreen(
                 trailingIcon = {
                     IconButton(onClick = { isPasswordVisible = !isPasswordVisible }) {
                         Icon(
-                            imageVector = if (isPasswordVisible) Icons.Filled.Visibility else Icons.Filled.VisibilityOff,
+                            imageVector = if (isPasswordVisible) Icons.Default.Visibility else Icons.Default.VisibilityOff,
                             contentDescription = null
                         )
                     }
@@ -157,12 +220,15 @@ fun LoginScreen(
                         color = MaterialTheme.colorScheme.onPrimary
                     )
                 } else {
-                    Text("Login as ${expectedRole.capitalize()}")
+                    Text("Login as ${expectedRole.capitalize(Locale.ROOT)}")
                 }
             }
 
             Button(
-                onClick = { onGoogleSignIn() },
+                onClick = {
+                    val signInIntent = googleSignInClient.signInIntent
+                    launcher.launch(signInIntent)
+                },
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(50.dp)

@@ -3,6 +3,7 @@ package com.example.healthsurveyappandroid.viewmodel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.healthsurveyappandroid.data.User
+import com.google.firebase.auth.AuthCredential
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -65,11 +66,55 @@ class AuthViewModel : ViewModel() {
             try {
                 val document = usersCollection.document(uid).get().await()
                 val role = document.getString("role")
-                println("Fetched role: $role") // Debug log
                 onResult(role)
             } catch (e: Exception) {
-                e.printStackTrace()
                 onResult(null)
+            }
+        }
+    }
+
+    // ✅ NEW FUNCTION to support Compose-style Google Sign-In
+    fun signInWithGoogleCredential(
+        credential: AuthCredential,
+        onResult: (Boolean, String?) -> Unit
+    ) {
+        viewModelScope.launch {
+            _authState.value = AuthState(isLoading = true)
+
+            try {
+                val authResult = auth.signInWithCredential(credential).await()
+                val firebaseUser = authResult.user ?: throw Exception("Firebase user is null")
+
+                val uid = firebaseUser.uid
+                val userDoc = usersCollection.document(uid).get().await()
+
+                // If new user, save to Firestore
+                if (!userDoc.exists()) {
+                    usersCollection.document(uid).set(
+                        mapOf(
+                            "email" to firebaseUser.email,
+                            "name" to firebaseUser.displayName,
+                            "role" to "user" // default role
+                        )
+                    ).await()
+                }
+
+                // Fetch role (or fallback to user)
+                val role = userDoc.getString("role") ?: "user"
+
+                val user = User(
+                    id = uid,
+                    email = firebaseUser.email ?: "",
+                    name = firebaseUser.displayName ?: "",
+                    role = role
+                )
+
+                _authState.value = AuthState(user = user)
+                onResult(true, null)
+
+            } catch (e: Exception) {
+                _authState.value = AuthState(error = e.message)
+                onResult(false, e.message)
             }
         }
     }
