@@ -16,6 +16,7 @@ import com.example.healthsurveyappandroid.ui.screens.auth.ForgotPasswordScreen
 import com.example.healthsurveyappandroid.ui.screens.auth.LoginScreen
 import com.example.healthsurveyappandroid.ui.screens.auth.RegisterScreen
 import com.example.healthsurveyappandroid.ui.screens.user.SurveyFormScreen
+import com.example.healthsurveyappandroid.utils.GoogleSignInManager
 import com.example.healthsurveyappandroid.viewmodel.AdminViewModel
 import com.example.healthsurveyappandroid.viewmodel.AuthViewModel
 import com.example.healthsurveyappandroid.viewmodel.SurveyViewModel
@@ -36,7 +37,8 @@ sealed class Screen(val route: String) {
 fun AppNavigation(
     authViewModel: AuthViewModel,
     surveyViewModel: SurveyViewModel,
-    adminViewModel: AdminViewModel
+    adminViewModel: AdminViewModel,
+    googleSignIn : GoogleSignInManager
 ) {
     val navController = rememberNavController()
     val authState by authViewModel.authState.collectAsState()
@@ -63,10 +65,7 @@ fun AppNavigation(
                 onNavigateToRegister = { navController.navigate(Screen.Register.route) },
                 onNavigateToAdmin = { navController.navigate(Screen.AdminDashboard.route) },
                 onNavigateToUser = { navController.navigate(Screen.SurveyForm.route) },
-                onNavigateToForgotPassword = { navController.navigate(Screen.ForgotPassword.route) },
-                onGoogleSignIn = {
-                    // You can call your Google Sign-In logic here
-                }
+                onNavigateToForgotPassword = { navController.navigate(Screen.ForgotPassword.route) }
             )
         }
 
