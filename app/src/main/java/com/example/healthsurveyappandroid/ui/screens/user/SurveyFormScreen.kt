@@ -2,15 +2,16 @@ package com.example.healthsurveyappandroid.ui.screens.user
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Sync
+import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
+import com.example.healthsurveyappandroid.data.Survey
 import com.example.healthsurveyappandroid.viewmodel.SurveyViewModel
-import kotlinx.coroutines.launch
-import androidx.compose.material.icons.filled.ExitToApp
 import com.example.healthsurveyappandroid.viewmodel.AuthViewModel
+import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -18,136 +19,195 @@ fun SurveyFormScreen(
     surveyViewModel: SurveyViewModel,
     authViewModel: AuthViewModel,
     onSubmitSuccess: () -> Unit,
-    onLogout: () -> Unit
+    onLogout: () -> Unit,
+    onViewHistory: () -> Unit,
+    onViewProfile: () -> Unit
 ) {
-    var step by remember { mutableStateOf(0) }
-    val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
+    val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
+    val snackbarHostState = remember { SnackbarHostState() }
 
-    // State observers
-    val submissionResult by surveyViewModel.submissionResult.collectAsState(initial = null)
-    val syncStatus by surveyViewModel.syncStatus.collectAsState()
-    val currentSurvey by surveyViewModel.currentSurvey.collectAsState()
+    val currentSurvey by surveyViewModel.currentSurvey.collectAsState(Survey())
+    val syncStatus by surveyViewModel.syncStatus.collectAsState(SurveyViewModel.SyncStatus.Idle)
+    val submissionResult by surveyViewModel.submissionResult.collectAsState(null)
 
-    // Handle sync status changes
+    var step by remember { mutableStateOf(0) }
+    var isSubmitting by remember { mutableStateOf(false) }
+
+    // Show Snackbar on sync status changes
     LaunchedEffect(syncStatus) {
         when (val status = syncStatus) {
-            is SurveyViewModel.SyncStatus.Syncing -> {
-                snackbarHostState.showSnackbar("Syncing pending surveys...")
-            }
+            is SurveyViewModel.SyncStatus.Syncing -> snackbarHostState.showSnackbar("Syncing pending surveys...")
             is SurveyViewModel.SyncStatus.Success -> {
-                if (status.count > 0) {
-                    snackbarHostState.showSnackbar("Synced ${status.count} surveys successfully")
-                }
+                if (status.count > 0) snackbarHostState.showSnackbar("Synced ${status.count} surveys successfully")
             }
-            is SurveyViewModel.SyncStatus.Error -> {
-                snackbarHostState.showSnackbar("Sync error: ${status.message}")
-            }
+            is SurveyViewModel.SyncStatus.Error -> snackbarHostState.showSnackbar("Sync error: ${status.message}")
             else -> {}
         }
     }
 
-    // Handle submission results
+    // Show Snackbar for submission result and react to success/failure
     LaunchedEffect(submissionResult) {
-        submissionResult?.let { message ->
-            snackbarHostState.showSnackbar(message)
-            surveyViewModel.clearResult()
+        submissionResult?.let { msg ->
+            snackbarHostState.showSnackbar(msg)
+            // Reset submitting flag after response
+            isSubmitting = false
+            // Check if submission was successful (you can customize the condition)
+            if (msg.contains("Submitted") || msg.contains("saved locally")) {
+                onSubmitSuccess()
+                surveyViewModel.clearResult()
+                // Optionally reset the form step on success
+                step = 0
+            }
         }
     }
 
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { Text("Health Survey") },
-                actions = {
-                    IconButton(
-                        onClick = {
-                            scope.launch {
-                                surveyViewModel.syncPendingSurveys()
-                            }
-                        },
-                        enabled = syncStatus !is SurveyViewModel.SyncStatus.Syncing
-                    ) {
-                        Icon(Icons.Filled.Sync, contentDescription = "Sync Local Surveys")
-                        if (syncStatus is SurveyViewModel.SyncStatus.Syncing) {
-                            CircularProgressIndicator(
-                                modifier = Modifier.size(24.dp),
-                                color = MaterialTheme.colorScheme.onPrimary,
-                                strokeWidth = 2.dp
-                            )
-                        }
+    ModalNavigationDrawer(
+        drawerState = drawerState,
+        drawerContent = {
+            ModalDrawerSheet {
+                Text(
+                    text = "Menu",
+                    style = MaterialTheme.typography.titleMedium,
+                    modifier = Modifier.padding(16.dp)
+                )
+                DrawerItem(
+                    label = "View Profile",
+                    icon = Icons.Default.Person,
+                    onClick = {
+                        scope.launch { drawerState.close() }
+                        onViewProfile()
                     }
-                    // Logout Button
-                    IconButton(
-                        onClick = {
-                            authViewModel.signOut() // Call signOut from AuthViewModel
+                )
+                DrawerItem(
+                    label = "Take Survey",
+                    icon = Icons.Default.Assignment,
+                    onClick = {
+                        scope.launch { drawerState.close() }
+                        step = 0 // Reset form
+                    }
+                )
+                DrawerItem(
+                    label = "View History",
+                    icon = Icons.Default.History,
+                    onClick = {
+                        scope.launch { drawerState.close() }
+                        onViewHistory()
+                    }
+                )
+                DrawerItem(
+                    label = "Logout",
+                    icon = Icons.Default.ExitToApp,
+                    onClick = {
+                        scope.launch {
+                            drawerState.close()
+                            authViewModel.signOut()
                             onLogout()
                         }
-                    ) {
-                        Icon(Icons.Filled.ExitToApp, contentDescription = "Logout")
-                    }
-                }
-            )
-        },
-        snackbarHost = { SnackbarHost(snackbarHostState) }
-    ) { padding ->
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(padding)
-                .padding(16.dp)
-        ) {
-            // Survey step content
-            LinearProgressIndicator(
-                progress = { (step + 1) / 4f },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(24.dp)
-                    .padding(bottom = 16.dp),
-            )
-            Text(
-                text = "Step ${step + 1} of 4",
-                style = MaterialTheme.typography.bodyMedium,
-                modifier = Modifier.padding(bottom = 8.dp)
-            )
-            when (step) {
-                0 -> PersonalDetailsPage(
-                    survey = currentSurvey,
-                    onNext = {
-                        surveyViewModel.updateSurvey(it)
-                        step++
                     }
                 )
-                1 -> HealthDetailsPage(
-                    survey = currentSurvey,
-                    onNext = {
-                        surveyViewModel.updateSurvey(it)
-                        step++
+            }
+        }
+    ) {
+        Scaffold(
+            topBar = {
+                TopAppBar(
+                    title = { Text("Health Survey") },
+                    navigationIcon = {
+                        IconButton(onClick = { scope.launch { drawerState.open() } }) {
+                            Icon(Icons.Default.Menu, contentDescription = "Open Menu")
+                        }
                     },
-                    onBack = { step-- }
-                )
-                2 -> AddressDetailsPage(
-
-                    survey = currentSurvey,
-                    viewModel = surveyViewModel,
-                    onNext = {
-                        surveyViewModel.updateSurvey(it)
-                        step++
-                    },
-                    onBack = { step-- }
-                )
-                3 -> DocumentUploadPage(
-                    surveyViewModel = surveyViewModel,
-                    onBack = { step-- },
-                    onSubmit = {
-                        scope.launch {
-                            surveyViewModel.submitSurvey()
-                            onSubmitSuccess()
+                    actions = {
+                        IconButton(
+                            onClick = {
+                                scope.launch { surveyViewModel.syncPendingSurveys() }
+                            },
+                            enabled = syncStatus !is SurveyViewModel.SyncStatus.Syncing
+                        ) {
+                            Icon(Icons.Default.Sync, contentDescription = "Sync Local Surveys")
                         }
                     }
                 )
+            },
+            snackbarHost = { SnackbarHost(snackbarHostState) }
+        ) { padding ->
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(padding)
+                    .padding(16.dp)
+            ) {
+                LinearProgressIndicator(
+                    progress = (step + 1) / 4f, // Pass Float, not lambda
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(8.dp)
+                        .padding(bottom = 16.dp)
+                )
+
+                Text(
+                    text = "Step ${step + 1} of 4",
+                    style = MaterialTheme.typography.bodyMedium,
+                    modifier = Modifier.padding(bottom = 8.dp)
+                )
+
+                when (step) {
+                    0 -> PersonalDetailsPage(
+                        survey = currentSurvey,
+                        onNext = {
+                            surveyViewModel.updateSurvey(it)
+                            step++
+                        }
+                    )
+                    1 -> HealthDetailsPage(
+                        survey = currentSurvey,
+                        onNext = {
+                            surveyViewModel.updateSurvey(it)
+                            step++
+                        },
+                        onBack = { step-- }
+                    )
+                    2 -> AddressDetailsPage(
+                        survey = currentSurvey,
+                        viewModel = surveyViewModel,
+                        onNext = {
+                            surveyViewModel.updateSurvey(it)
+                            step++
+                        },
+                        onBack = { step-- }
+                    )
+                    3 -> DocumentUploadPage(
+                        surveyViewModel = surveyViewModel,
+                        onBack = { step-- },
+                        onSubmit = {
+                            if (!isSubmitting) {
+                                isSubmitting = true
+                                scope.launch {
+                                    surveyViewModel.submitSurvey()
+                                    // Do NOT call onSubmitSuccess() here directly,
+                                    // Instead wait for submissionResult effect above
+                                }
+                            }
+                        }
+                    )
+                }
             }
         }
     }
 }
 
+@Composable
+fun DrawerItem(
+    label: String,
+    icon: ImageVector,
+    onClick: () -> Unit
+) {
+    NavigationDrawerItem(
+        label = { Text(label) },
+        selected = false,
+        icon = { Icon(icon, contentDescription = label) },
+        onClick = onClick,
+        modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding)
+    )
+}

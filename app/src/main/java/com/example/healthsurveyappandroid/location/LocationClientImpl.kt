@@ -1,4 +1,5 @@
 package com.example.healthsurveyappandroid.location
+
 import android.annotation.SuppressLint
 import android.content.Context
 import android.location.Location
@@ -32,13 +33,17 @@ class LocationClientImpl(context: Context) : LocationClient {
 
         return try {
             val cancellationToken = CancellationTokenSource()
-            val location = fusedLocationClient.getCurrentLocation(priority, cancellationToken.token).await()
+            val location =
+                fusedLocationClient.getCurrentLocation(priority, cancellationToken.token).await()
 
             if (location != null) {
                 Log.d("LocationClient", "Location from getCurrentLocation: $location")
                 location
             } else {
-                Log.d("LocationClient", "getCurrentLocation returned null. Falling back to requestLocationUpdates.")
+                Log.d(
+                    "LocationClient",
+                    "getCurrentLocation returned null. Falling back to requestLocationUpdates."
+                )
                 getLastLocationViaUpdates(priority)
             }
         } catch (e: Exception) {
