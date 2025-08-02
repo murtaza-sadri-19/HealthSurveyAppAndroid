@@ -11,6 +11,8 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import android.util.Patterns
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Visibility
@@ -156,7 +158,13 @@ fun LoginScreen(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(bottom = 16.dp),
-                singleLine = true
+                singleLine = true,
+                isError = email.isNotBlank() && !Patterns.EMAIL_ADDRESS.matcher(email).matches(),
+                supportingText = {
+                    if (email.isNotBlank() && !Patterns.EMAIL_ADDRESS.matcher(email).matches()) {
+                        Text("Enter a valid email address", color = MaterialTheme.colorScheme.error)
+                    }
+                }
             )
 
             OutlinedTextField(
@@ -171,7 +179,7 @@ fun LoginScreen(
                 trailingIcon = {
                     IconButton(onClick = { isPasswordVisible = !isPasswordVisible }) {
                         Icon(
-                            imageVector = if (isPasswordVisible) Icons.Default.Visibility else Icons.Default.VisibilityOff,
+                            imageVector = if (isPasswordVisible) Icons.Filled.Visibility else Icons.Filled.VisibilityOff,
                             contentDescription = null
                         )
                     }
@@ -192,10 +200,15 @@ fun LoginScreen(
             Button(
                 onClick = {
                     isLoading = true
-                    viewModel.loginUser(email, password) { success, error, user ->
+                    viewModel.loginUser(email.trim(), password) { success, error, user ->
                         isLoading = false
                         if (!success) {
-                            errorMessage = error ?: "Login failed"
+                            errorMessage = when {
+                                error == null -> "Login failed"
+                                error.contains("There is no user record") -> "User not found"
+                                error.contains("The password is invalid") -> "Incorrect password"
+                                else -> "Login failed"
+                            }
                         } else if (user?.role != expectedRole) {
                             errorMessage = "You are not allowed to log in as ${tabs[selectedTabIndex]}"
                             viewModel.signOut()
@@ -212,7 +225,10 @@ fun LoginScreen(
                     .fillMaxWidth()
                     .height(50.dp)
                     .padding(top = 8.dp),
-                enabled = !isLoading
+                enabled = !isLoading &&
+                        email.isNotBlank() &&
+                        password.isNotBlank() &&
+                        Patterns.EMAIL_ADDRESS.matcher(email).matches()
             ) {
                 if (isLoading) {
                     CircularProgressIndicator(
@@ -220,7 +236,7 @@ fun LoginScreen(
                         color = MaterialTheme.colorScheme.onPrimary
                     )
                 } else {
-                    Text("Login as ${expectedRole.capitalize(Locale.ROOT)}")
+                    Text("Login as ${expectedRole.capitalize()}")
                 }
             }
 

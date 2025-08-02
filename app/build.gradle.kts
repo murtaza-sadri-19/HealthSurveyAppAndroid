@@ -93,6 +93,8 @@ dependencies {
     implementation(libs.androidx.material3)
     implementation(libs.androidx.navigation.compose)
     implementation("androidx.compose.material:material-icons-extended")
+    implementation ("androidx.compose.material3:material3:1.2.1") // or latest
+
 
     // Coroutines
     implementation(libs.kotlinx.coroutines.core)
@@ -102,6 +104,8 @@ dependencies {
     // Room Database
     implementation("androidx.room:room-runtime:2.7.1")
     implementation(libs.identity.jvm)
+    implementation(libs.androidx.navigation.runtime.android)
+    implementation(libs.androidx.foundation.android)
     //noinspection KaptUsageInsteadOfKsp
     kapt("androidx.room:room-compiler:2.7.1")
     implementation("androidx.room:room-ktx:2.7.1")
