@@ -25,11 +25,11 @@ fun ProfileScreen(authViewModel: AuthViewModel) {
         val user = authState.user
 
         if (user != null) {
-            Text("📧 Email: ${user.email}")
+            Text(" Email: ${user.email}")
             Spacer(modifier = Modifier.height(8.dp))
-            Text("🆔 UID: ${user.id}")
+            Text(" UID: ${user.id}")
             Spacer(modifier = Modifier.height(8.dp))
-            Text("🔑 Role: ${user.role}")
+            Text(" Role: ${user.role}")
         } else {
             Text("No user is currently logged in.")
         }

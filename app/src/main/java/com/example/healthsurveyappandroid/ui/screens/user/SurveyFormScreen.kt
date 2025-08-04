@@ -1,5 +1,6 @@
 package com.example.healthsurveyappandroid.ui.screens.user
 
+import android.graphics.drawable.Icon
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
@@ -8,10 +9,12 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
+import com.android.identity.documenttype.Icon
 import com.example.healthsurveyappandroid.data.Survey
 import com.example.healthsurveyappandroid.viewmodel.SurveyViewModel
 import com.example.healthsurveyappandroid.viewmodel.AuthViewModel
 import kotlinx.coroutines.launch
+import java.lang.reflect.Modifier
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
