@@ -5,7 +5,9 @@ import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material3.*
@@ -18,6 +20,7 @@ import androidx.compose.ui.unit.dp
 import com.example.healthsurveyappandroid.data.Survey
 import com.example.healthsurveyappandroid.viewmodel.SurveyViewModel
 
+//@OptIn(ExperimentalMaterialApi::class)
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AddressDetailsPage(
@@ -47,6 +50,7 @@ fun AddressDetailsPage(
     var stateError by remember { mutableStateOf<String?>(null) }
     var pinCodeError by remember { mutableStateOf<String?>(null) }
 
+    // Location permission launcher
     val locationPermissionLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.RequestMultiplePermissions()
     ) { permissions ->
@@ -63,24 +67,34 @@ fun AddressDetailsPage(
     LaunchedEffect(locationStatus) {
         when (locationStatus) {
             is SurveyViewModel.LocationStatus.Success -> {
-                val location = (locationStatus as SurveyViewModel.LocationStatus.Success).location
-                gpsCoordinates = "${location.latitude},${location.longitude}"
+                val loc = (locationStatus as SurveyViewModel.LocationStatus.Success).location
+                gpsCoordinates = "${loc.latitude},${loc.longitude}"
+                // Reset status optionally to prevent repeated updates
+                viewModel.resetLocationStatus()
             }
             is SurveyViewModel.LocationStatus.Error -> {
-                val error = (locationStatus as SurveyViewModel.LocationStatus.Error).message
-                Toast.makeText(context, "Location error: $error", Toast.LENGTH_SHORT).show()
+                Toast.makeText(
+                    context,
+                    "Location error: ${(locationStatus as SurveyViewModel.LocationStatus.Error).message}",
+                    Toast.LENGTH_LONG
+                ).show()
+                // Reset status
+                viewModel.resetLocationStatus()
             }
             else -> {}
         }
     }
 
-    Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
-        Text(
-            text = "Address Information",
-            style = MaterialTheme.typography.titleMedium,
-            modifier = Modifier.padding(bottom = 8.dp)
-        )
+    Column(modifier = Modifier
+        .fillMaxSize()
+        .verticalScroll(rememberScrollState())
+        .padding(16.dp)
+    ) {
+        Text(text = "Address Information", style = MaterialTheme.typography.titleMedium)
+        Spacer(modifier = Modifier.height(8.dp))
 
+        // State Dropdown...
+        // ... your existing code for state, city, district, pin code etc.
         // State Dropdown
         var stateExpanded by remember { mutableStateOf(false) }
         ExposedDropdownMenuBox(
@@ -159,13 +173,11 @@ fun AddressDetailsPage(
             modifier = Modifier.fillMaxWidth()
         )
 
+
+
         Spacer(modifier = Modifier.height(16.dp))
 
-        // GPS Coordinates Section
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier.fillMaxWidth()
-        ) {
+        Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
             OutlinedTextField(
                 value = gpsCoordinates,
                 onValueChange = {},
@@ -174,28 +186,21 @@ fun AddressDetailsPage(
                 modifier = Modifier.weight(1f)
             )
 
-            IconButton(
-                onClick = {
-                    locationPermissionLauncher.launch(
-                        arrayOf(
-                            Manifest.permission.ACCESS_FINE_LOCATION,
-                            Manifest.permission.ACCESS_COARSE_LOCATION
-                        )
-                    )
-                }
-            ) {
-                if (locationStatus is SurveyViewModel.LocationStatus.Loading) {
-                    CircularProgressIndicator(
-                        modifier = Modifier.size(24.dp),
-                        strokeWidth = 2.dp
-                    )
+            IconButton(onClick = {
+                // Request permissions before requesting location
+                locationPermissionLauncher.launch(
+                    arrayOf(Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION)
+                )
+            }) {
+                if (locationStatus == SurveyViewModel.LocationStatus.Loading) {
+                    CircularProgressIndicator(modifier = Modifier.size(24.dp), strokeWidth = 2.dp)
                 } else {
-                    Icon(Icons.Default.LocationOn, contentDescription = "Get Location")
+                    Icon(Icons.Default.LocationOn, contentDescription = "Get Current Location")
                 }
             }
         }
 
-        if (gpsCoordinates.isNotEmpty()) {
+        if (gpsCoordinates.isNotBlank()) {
             Text(
                 text = "Location captured: $gpsCoordinates",
                 style = MaterialTheme.typography.bodySmall,
@@ -206,34 +211,28 @@ fun AddressDetailsPage(
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween
-        ) {
+        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
             Button(onClick = onBack) {
                 Text("Back")
             }
-
-            Button(
-                onClick = {
-                    stateError = if (state !in indianStates) "Select a state" else null
-                    pinCodeError = if (pinCode.length != 6) "Pincode must be 6 digits" else null
-                    if (stateError == null && pinCodeError == null) {
-                        onNext(
-                            survey.copy(
-                                state = state,
-                                city = city,
-                                district = district,
-                                pinCode = pinCode,
-                                permanentAddress = permanentAddress,
-                                temporaryAddress = temporaryAddress,
-                                gpsCoordinates = gpsCoordinates
-                            )
-                        )
-                    }
-                },
-                enabled = gpsCoordinates.isNotEmpty()
-            ) {
+            Button(onClick = {
+                // Validate state & pincode before advancing
+                stateError = if (state !in indianStates) "Select a valid state" else null
+                pinCodeError = if (pinCode.length != 6) "Pin code must be 6 digits" else null
+                if (stateError == null && pinCodeError == null) {
+                    // Form the updated survey
+                    val updatedSurvey = survey.copy(
+                        state = state,
+                        city = city,
+                        district = district,
+                        pinCode = pinCode,
+                        permanentAddress = permanentAddress,
+                        temporaryAddress = temporaryAddress,
+                        gpsCoordinates = gpsCoordinates
+                    )
+                    onNext(updatedSurvey)
+                }
+            }, enabled = gpsCoordinates.isNotBlank()) {
                 Text("Next")
             }
         }
