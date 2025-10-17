@@ -30,16 +30,19 @@ import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.example.healthsurveyappandroid.viewmodel.AuthViewModel
+import com.example.healthsurveyappandroid.ui.components.ThemeToggle
+import com.example.healthsurveyappandroid.viewmodel.ThemeViewModel
 import kotlinx.coroutines.launch
 
 enum class AuthTab {
     LOGIN, REGISTER
 }
 
-@OptIn(ExperimentalAnimationApi::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalAnimationApi::class)
 @Composable
 fun AuthScreen(
     viewModel: AuthViewModel,
+    themeViewModel: ThemeViewModel,
     onNavigateToAdmin: () -> Unit,
     onNavigateToUser: () -> Unit
 ) {
@@ -56,7 +59,6 @@ fun AuthScreen(
     val context = LocalContext.current
     val focusManager = LocalFocusManager.current
 
-    // Handle auth state changes
     LaunchedEffect(viewModel.authState) {
         viewModel.authState.collect { state ->
             state.user?.let { user ->
@@ -68,7 +70,6 @@ fun AuthScreen(
         }
     }
 
-    // Handle error messages
     LaunchedEffect(errorMessage) {
         errorMessage?.let {
             coroutineScope.launch {
@@ -91,6 +92,23 @@ fun AuthScreen(
                     shape = RoundedCornerShape(12.dp)
                 )
             }
+        },
+        topBar = {
+            TopAppBar(
+                title = {
+                    Text(
+                        text = "Health Survey",
+                        style = MaterialTheme.typography.titleLarge,
+                        fontWeight = FontWeight.Bold
+                    )
+                },
+                actions = {
+                    ThemeToggle(themeViewModel = themeViewModel)
+                },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.surface
+                )
+            )
         }
     ) { paddingValues ->
         Box(

@@ -18,12 +18,15 @@ import androidx.compose.ui.unit.dp
 import com.example.healthsurveyappandroid.viewmodel.SurveyViewModel
 import kotlinx.coroutines.launch
 import com.example.healthsurveyappandroid.viewmodel.AuthViewModel
+import com.example.healthsurveyappandroid.ui.components.ThemeToggle
+import com.example.healthsurveyappandroid.viewmodel.ThemeViewModel
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalAnimationApi::class)
 @Composable
 fun SurveyFormScreen(
     surveyViewModel: SurveyViewModel,
     authViewModel: AuthViewModel,
+    themeViewModel: ThemeViewModel,
     onSubmitSuccess: () -> Unit,
     onLogout: () -> Unit
 ) {
@@ -78,6 +81,7 @@ fun SurveyFormScreen(
             ModernTopAppBar(
                 step = step,
                 syncStatus = syncStatus,
+                themeViewModel = themeViewModel,
                 onSyncClick = {
                     scope.launch {
                         surveyViewModel.syncPendingSurveys()
@@ -170,6 +174,7 @@ fun SurveyFormScreen(
 fun ModernTopAppBar(
     step: Int,
     syncStatus: SurveyViewModel.SyncStatus,
+    themeViewModel: ThemeViewModel,
     onSyncClick: () -> Unit,
     onLogoutClick: () -> Unit
 ) {
@@ -195,6 +200,11 @@ fun ModernTopAppBar(
             }
         },
         actions = {
+            
+            // Theme Toggle
+            ThemeToggle(themeViewModel = themeViewModel)
+            Spacer(modifier = Modifier.width(8.dp))
+
             // Sync Button
             IconButton(
                 onClick = onSyncClick,

@@ -22,11 +22,16 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
+import com.example.healthsurveyappandroid.ui.components.ThemeToggle
+import com.example.healthsurveyappandroid.viewmodel.ThemeViewModel
 import com.example.healthsurveyappandroid.viewmodel.AdminViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun CreateUserScreen(viewModel: AdminViewModel) {
+fun CreateUserScreen(
+    viewModel: AdminViewModel,
+    themeViewModel: ThemeViewModel
+) {
     var name by remember { mutableStateOf("") }
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
@@ -40,7 +45,6 @@ fun CreateUserScreen(viewModel: AdminViewModel) {
     val snackbarHostState = remember { SnackbarHostState() }
     val focusManager = LocalFocusManager.current
 
-    // Show snackbar for result messages
     LaunchedEffect(resultMessage) {
         resultMessage?.let {
             snackbarHostState.showSnackbar(
@@ -78,6 +82,9 @@ fun CreateUserScreen(viewModel: AdminViewModel) {
                         style = MaterialTheme.typography.titleLarge,
                         fontWeight = FontWeight.Bold
                     )
+                },
+                actions = {
+                    ThemeToggle(themeViewModel = themeViewModel)
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = MaterialTheme.colorScheme.surface

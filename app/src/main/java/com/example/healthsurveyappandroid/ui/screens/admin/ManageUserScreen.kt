@@ -1,5 +1,7 @@
 package com.example.healthsurveyappandroid.ui.screens.admin
 
+import androidx.compose.animation.*
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -13,23 +15,36 @@ import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.example.healthsurveyappandroid.data.User
+import com.example.healthsurveyappandroid.ui.components.ThemeToggle
 import com.example.healthsurveyappandroid.viewmodel.AdminViewModel
+import com.example.healthsurveyappandroid.viewmodel.ThemeViewModel
+
+enum class UserTab {
+    ALL, ADMINS, USERS
+}
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ManageUserScreen(viewModel: AdminViewModel) {
+fun ManageUserScreen(
+    viewModel: AdminViewModel,
+    themeViewModel: ThemeViewModel
+) {
     val users by viewModel.users.observeAsState(emptyList())
+    var selectedTab by remember { mutableStateOf(UserTab.ALL) }
     var showEditDialog by remember { mutableStateOf(false) }
     var selectedUser by remember { mutableStateOf<User?>(null) }
     var showDeleteDialog by remember { mutableStateOf(false) }
     var userToDelete by remember { mutableStateOf<User?>(null) }
 
-    // Original function name - no fetchUsers, users are loaded automatically
-    LaunchedEffect(Unit) {
-        // Users are observed from LiveData, no explicit fetch needed
+    // Filter users based on selected tab
+    val filteredUsers = when (selectedTab) {
+        UserTab.ALL -> users
+        UserTab.ADMINS -> users.filter { it.role == "admin" }
+        UserTab.USERS -> users.filter { it.role == "user" }
     }
 
     Scaffold(
@@ -43,11 +58,14 @@ fun ManageUserScreen(viewModel: AdminViewModel) {
                             fontWeight = FontWeight.Bold
                         )
                         Text(
-                            text = "${users.size} users",
+                            text = "${filteredUsers.size} ${selectedTab.name.lowercase()}",
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
+                },
+                actions = {
+                    ThemeToggle(themeViewModel = themeViewModel)
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = MaterialTheme.colorScheme.surface
@@ -68,51 +86,114 @@ fun ManageUserScreen(viewModel: AdminViewModel) {
                 )
                 .padding(paddingValues)
         ) {
-            if (users.isEmpty()) {
-                // Empty State
-                Column(
+            Column(
+                modifier = Modifier.fillMaxSize()
+            ) {
+                // Tab Selector
+                Card(
                     modifier = Modifier
-                        .fillMaxSize()
-                        .padding(24.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.Center
+                        .fillMaxWidth()
+                        .padding(16.dp),
+                    shape = RoundedCornerShape(16.dp),
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.surface
+                    ),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
                 ) {
-                    Icon(
-                        imageVector = Icons.Default.PersonOff,
-                        contentDescription = null,
-                        modifier = Modifier.size(80.dp),
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
-                    )
-                    Spacer(modifier = Modifier.height(16.dp))
-                    Text(
-                        text = "No Users Found",
-                        style = MaterialTheme.typography.titleLarge,
-                        fontWeight = FontWeight.Bold
-                    )
-                    Text(
-                        text = "Create users to get started",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
-            } else {
-                LazyColumn(
-                    modifier = Modifier.fillMaxSize(),
-                    contentPadding = PaddingValues(16.dp),
-                    verticalArrangement = Arrangement.spacedBy(12.dp)
-                ) {
-                    items(users) { user ->
-                        UserCard(
-                            user = user,
-                            onEdit = {
-                                selectedUser = user
-                                showEditDialog = true
-                            },
-                            onDelete = {
-                                userToDelete = user
-                                showDeleteDialog = true
-                            }
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(8.dp)
+                            .background(MaterialTheme.colorScheme.surfaceVariant, RoundedCornerShape(12.dp))
+                            .padding(4.dp),
+                        horizontalArrangement = Arrangement.spacedBy(4.dp)
+                    ) {
+                        UserTabButton(
+                            text = "All",
+                            count = users.size,
+                            isSelected = selectedTab == UserTab.ALL,
+                            onClick = { selectedTab = UserTab.ALL },
+                            modifier = Modifier.weight(1f)
                         )
+
+                        UserTabButton(
+                            text = "Admins",
+                            count = users.count { it.role == "admin" },
+                            isSelected = selectedTab == UserTab.ADMINS,
+                            onClick = { selectedTab = UserTab.ADMINS },
+                            modifier = Modifier.weight(1f),
+                            icon = Icons.Default.AdminPanelSettings
+                        )
+
+                        UserTabButton(
+                            text = "Users",
+                            count = users.count { it.role == "user" },
+                            isSelected = selectedTab == UserTab.USERS,
+                            onClick = { selectedTab = UserTab.USERS },
+                            modifier = Modifier.weight(1f),
+                            icon = Icons.Default.Person
+                        )
+                    }
+                }
+
+                // Users List
+                if (filteredUsers.isEmpty()) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(24.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.Center
+                    ) {
+                        Icon(
+                            imageVector = when (selectedTab) {
+                                UserTab.ADMINS -> Icons.Default.AdminPanelSettings
+                                UserTab.USERS -> Icons.Default.Person
+                                else -> Icons.Default.PersonOff
+                            },
+                            contentDescription = null,
+                            modifier = Modifier.size(80.dp),
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
+                        )
+                        Spacer(modifier = Modifier.height(16.dp))
+                        Text(
+                            text = when (selectedTab) {
+                                UserTab.ADMINS -> "No Admins Found"
+                                UserTab.USERS -> "No Users Found"
+                                else -> "No Users Found"
+                            },
+                            style = MaterialTheme.typography.titleLarge,
+                            fontWeight = FontWeight.Bold
+                        )
+                        Text(
+                            text = "Create users to get started",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                } else {
+                    LazyColumn(
+                        modifier = Modifier.fillMaxSize(),
+                        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
+                        verticalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        items(filteredUsers, key = { it.id }) { user ->
+                            UserCard(
+                                user = user,
+                                onEdit = {
+                                    selectedUser = user
+                                    showEditDialog = true
+                                },
+                                onDelete = {
+                                    userToDelete = user
+                                    showDeleteDialog = true
+                                }
+                            )
+                        }
+
+                        item {
+                            Spacer(modifier = Modifier.height(16.dp))
+                        }
                     }
                 }
             }
@@ -125,7 +206,6 @@ fun ManageUserScreen(viewModel: AdminViewModel) {
             user = selectedUser!!,
             onDismiss = { showEditDialog = false },
             onSave = { updatedUser ->
-                // Original backend call - updateUserRole
                 viewModel.updateUserRole(updatedUser.id, updatedUser.role) { success, message ->
                     // Handle callback if needed
                 }
@@ -158,7 +238,6 @@ fun ManageUserScreen(viewModel: AdminViewModel) {
             confirmButton = {
                 Button(
                     onClick = {
-                        // Original backend call maintained
                         viewModel.deleteUser(userToDelete!!.id)
                         showDeleteDialog = false
                     },
@@ -176,6 +255,78 @@ fun ManageUserScreen(viewModel: AdminViewModel) {
             },
             shape = RoundedCornerShape(16.dp)
         )
+    }
+}
+
+@Composable
+fun UserTabButton(
+    text: String,
+    count: Int,
+    isSelected: Boolean,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    icon: androidx.compose.ui.graphics.vector.ImageVector? = null
+) {
+    val backgroundColor by animateColorAsState(
+        targetValue = if (isSelected) {
+            MaterialTheme.colorScheme.primary
+        } else {
+            Color.Transparent
+        },
+        animationSpec = tween(300),
+        label = "Tab Background Color"
+    )
+
+    val contentColor by animateColorAsState(
+        targetValue = if (isSelected) {
+            MaterialTheme.colorScheme.onPrimary
+        } else {
+            MaterialTheme.colorScheme.onSurfaceVariant
+        },
+        animationSpec = tween(300),
+        label = "Tab Content Color"
+    )
+
+    Button(
+        onClick = onClick,
+        modifier = modifier.height(50.dp),
+        colors = ButtonDefaults.buttonColors(
+            containerColor = backgroundColor,
+            contentColor = contentColor
+        ),
+        shape = RoundedCornerShape(8.dp),
+        elevation = ButtonDefaults.buttonElevation(
+            defaultElevation = if (isSelected) 2.dp else 0.dp
+        )
+    ) {
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
+        ) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.Center
+            ) {
+                if (icon != null) {
+                    Icon(
+                        imageVector = icon,
+                        contentDescription = null,
+                        modifier = Modifier.size(16.dp)
+                    )
+                    Spacer(modifier = Modifier.width(4.dp))
+                }
+                Text(
+                    text = text,
+                    style = MaterialTheme.typography.labelLarge,
+                    fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium
+                )
+            }
+            Text(
+                text = count.toString(),
+                style = MaterialTheme.typography.labelSmall,
+                fontWeight = FontWeight.Normal
+            )
+        }
     }
 }
 
@@ -200,28 +351,39 @@ fun UserCard(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                // User Avatar
                 Surface(
                     shape = RoundedCornerShape(12.dp),
-                    color = MaterialTheme.colorScheme.primaryContainer,
+                    color = if (user.role == "admin") {
+                        MaterialTheme.colorScheme.errorContainer
+                    } else {
+                        MaterialTheme.colorScheme.primaryContainer
+                    },
                     modifier = Modifier.size(56.dp)
                 ) {
                     Box(
                         contentAlignment = Alignment.Center,
                         modifier = Modifier.fillMaxSize()
                     ) {
-                        Text(
-                            text = user.name.firstOrNull()?.uppercase() ?: "?",
-                            style = MaterialTheme.typography.titleLarge,
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.primary
-                        )
+                        if (user.role == "admin") {
+                            Icon(
+                                imageVector = Icons.Default.AdminPanelSettings,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.error,
+                                modifier = Modifier.size(28.dp)
+                            )
+                        } else {
+                            Text(
+                                text = user.name.firstOrNull()?.uppercase() ?: "?",
+                                style = MaterialTheme.typography.titleLarge,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.primary
+                            )
+                        }
                     }
                 }
-                
+
                 Spacer(modifier = Modifier.width(16.dp))
-                
-                // User Info
+
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
                         text = user.name,
@@ -256,10 +418,9 @@ fun UserCard(
                     }
                 }
             }
-            
+
             Spacer(modifier = Modifier.height(12.dp))
-            
-            // Action Buttons
+
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
@@ -277,7 +438,7 @@ fun UserCard(
                     Spacer(modifier = Modifier.width(4.dp))
                     Text("Edit")
                 }
-                
+
                 Button(
                     onClick = onDelete,
                     modifier = Modifier.weight(1f),
@@ -325,7 +486,6 @@ fun EditUserDialog(
                 modifier = Modifier.padding(vertical = 8.dp),
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
-                // Name (Read-only)
                 OutlinedTextField(
                     value = user.name,
                     onValueChange = {},
@@ -335,8 +495,7 @@ fun EditUserDialog(
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(12.dp)
                 )
-                
-                // Email (Read-only in original)
+
                 OutlinedTextField(
                     value = email,
                     onValueChange = {},
@@ -348,8 +507,7 @@ fun EditUserDialog(
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(12.dp)
                 )
-                
-                // Role Dropdown
+
                 ExposedDropdownMenuBox(
                     expanded = isDropdownExpanded,
                     onExpandedChange = { isDropdownExpanded = it }
@@ -367,7 +525,7 @@ fun EditUserDialog(
                             .menuAnchor(),
                         shape = RoundedCornerShape(12.dp)
                     )
-                    
+
                     ExposedDropdownMenu(
                         expanded = isDropdownExpanded,
                         onDismissRequest = { isDropdownExpanded = false }

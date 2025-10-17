@@ -32,6 +32,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.healthsurveyappandroid.data.Survey
 import com.example.healthsurveyappandroid.viewmodel.SurveyViewModel
+import com.example.healthsurveyappandroid.ui.components.ThemeToggle
+import com.example.healthsurveyappandroid.viewmodel.ThemeViewModel
 import kotlinx.coroutines.launch
 import java.io.OutputStream
 import kotlin.math.*
@@ -39,7 +41,10 @@ import kotlin.math.*
 @RequiresApi(Build.VERSION_CODES.Q)
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun SurveyAnalyticsScreen(viewModel: SurveyViewModel) {
+fun SurveyAnalyticsScreen(
+    viewModel: SurveyViewModel,
+    themeViewModel: ThemeViewModel
+    ) {
     val context = LocalContext.current
     val surveys by viewModel.surveys.collectAsState(emptyList())
     val scope = rememberCoroutineScope()
@@ -109,6 +114,11 @@ fun SurveyAnalyticsScreen(viewModel: SurveyViewModel) {
                     }
                 },
                 actions = {
+                    // Theme Toggle
+                    ThemeToggle(themeViewModel = themeViewModel)
+                    Spacer(modifier = Modifier.width(8.dp))
+                    
+                    // Export Button
                     IconButton(
                         onClick = {
                             isExporting = true
@@ -119,18 +129,7 @@ fun SurveyAnalyticsScreen(viewModel: SurveyViewModel) {
                         },
                         enabled = surveys.isNotEmpty() && !isExporting
                     ) {
-                        if (isExporting) {
-                            CircularProgressIndicator(
-                                modifier = Modifier.size(24.dp),
-                                strokeWidth = 2.dp
-                            )
-                        } else {
-                            Icon(
-                                imageVector = Icons.Default.Download,
-                                contentDescription = "Export CSV",
-                                tint = MaterialTheme.colorScheme.primary
-                            )
-                        }
+                        // ... export icon
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(

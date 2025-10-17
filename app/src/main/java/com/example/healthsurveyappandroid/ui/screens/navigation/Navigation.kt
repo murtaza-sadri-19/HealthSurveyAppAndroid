@@ -33,8 +33,6 @@ import com.example.healthsurveyappandroid.viewmodel.ThemeViewModel
 
 sealed class Screen(val route: String) {
     object Auth : Screen("auth")
-    object Login : Screen("login")
-    object Register : Screen("register")
     object AdminDashboard : Screen("admin/dashboard")
     object CreateUser : Screen("admin/create-user")
     object ManageUsers : Screen("admin/manage-users")
@@ -54,7 +52,6 @@ fun AppNavigation(
     val navController = rememberNavController()
     val authState by authViewModel.authState.collectAsState()
 
-    // Route user based on their role after login
     LaunchedEffect(authState.user?.role) {
         when (authState.user?.role) {
             "admin" -> navController.navigate(Screen.AdminDashboard.route) {
@@ -82,10 +79,10 @@ fun AppNavigation(
             ) + fadeOut(animationSpec = tween(300))
         }
     ) {
-        // Auth Screen (Combined Login/Register)
         composable(Screen.Auth.route) {
             AuthScreen(
                 viewModel = authViewModel,
+                themeViewModel = themeViewModel,
                 onNavigateToAdmin = {
                     navController.navigate(Screen.AdminDashboard.route) {
                         popUpTo(Screen.Auth.route) { inclusive = true }
@@ -99,7 +96,6 @@ fun AppNavigation(
             )
         }
 
-        // Admin Dashboard
         composable(Screen.AdminDashboard.route) {
             AdminDashboardScreen(
                 authViewModel = authViewModel,
@@ -115,26 +111,32 @@ fun AppNavigation(
             )
         }
 
-        // Create User Screen
         composable(Screen.CreateUser.route) {
-            CreateUserScreen(viewModel = adminViewModel)
+            CreateUserScreen(
+                viewModel = adminViewModel,
+                themeViewModel = themeViewModel
+            )
         }
 
-        // Manage Users Screen
         composable(Screen.ManageUsers.route) {
-            ManageUserScreen(viewModel = adminViewModel)
+            ManageUserScreen(
+                viewModel = adminViewModel,
+                themeViewModel = themeViewModel
+            )
         }
 
-        // Survey Analytics Screen
         composable(Screen.SurveyAnalytics.route) {
-            SurveyAnalyticsScreen(viewModel = surveyViewModel)
+            SurveyAnalyticsScreen(
+                viewModel = surveyViewModel,
+                themeViewModel = themeViewModel
+            )
         }
 
-        // Survey Form Screen
         composable(Screen.SurveyForm.route) {
             SurveyFormScreen(
                 surveyViewModel = surveyViewModel,
                 authViewModel = authViewModel,
+                themeViewModel = themeViewModel,
                 onSubmitSuccess = {
                     navController.navigate(Screen.SurveySuccess.route) {
                         popUpTo(Screen.SurveyForm.route) { inclusive = true }
@@ -148,9 +150,9 @@ fun AppNavigation(
             )
         }
 
-        // Survey Success Screen
         composable(Screen.SurveySuccess.route) {
             SurveySuccessScreen(
+                themeViewModel = themeViewModel,
                 onNewSurvey = {
                     navController.navigate(Screen.SurveyForm.route) {
                         popUpTo(Screen.SurveySuccess.route) { inclusive = true }
@@ -169,6 +171,7 @@ fun AppNavigation(
 
 @Composable
 fun SurveySuccessScreen(
+    themeViewModel: ThemeViewModel,
     onNewSurvey: () -> Unit,
     onLogout: () -> Unit
 ) {
@@ -192,7 +195,6 @@ fun SurveySuccessScreen(
                 .padding(32.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            // Success Animation Icon
             Surface(
                 shape = RoundedCornerShape(100.dp),
                 color = MaterialTheme.colorScheme.primaryContainer,
@@ -213,7 +215,6 @@ fun SurveySuccessScreen(
 
             Spacer(modifier = Modifier.height(32.dp))
 
-            // Success Message
             Text(
                 text = "Survey Submitted Successfully!",
                 style = MaterialTheme.typography.headlineMedium,
@@ -234,7 +235,6 @@ fun SurveySuccessScreen(
 
             Spacer(modifier = Modifier.height(48.dp))
 
-            // Action Buttons
             Column(
                 modifier = Modifier.fillMaxWidth(),
                 verticalArrangement = Arrangement.spacedBy(12.dp)
@@ -244,10 +244,7 @@ fun SurveySuccessScreen(
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(56.dp),
-                    shape = RoundedCornerShape(12.dp),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = MaterialTheme.colorScheme.primary
-                    )
+                    shape = RoundedCornerShape(12.dp)
                 ) {
                     Icon(
                         imageVector = Icons.Default.Add,
@@ -267,10 +264,7 @@ fun SurveySuccessScreen(
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(56.dp),
-                    shape = RoundedCornerShape(12.dp),
-                    colors = ButtonDefaults.outlinedButtonColors(
-                        contentColor = MaterialTheme.colorScheme.error
-                    )
+                    shape = RoundedCornerShape(12.dp)
                 ) {
                     Icon(
                         imageVector = Icons.Default.Logout,
@@ -282,35 +276,6 @@ fun SurveySuccessScreen(
                         text = "Logout",
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.SemiBold
-                    )
-                }
-            }
-
-            Spacer(modifier = Modifier.height(24.dp))
-
-            // Additional Info Card
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(16.dp),
-                colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.3f)
-                )
-            ) {
-                Row(
-                    modifier = Modifier.padding(16.dp),
-                    verticalAlignment = Alignment.Top
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Info,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.secondary,
-                        modifier = Modifier.size(24.dp)
-                    )
-                    Spacer(modifier = Modifier.width(12.dp))
-                    Text(
-                        text = "Your survey response has been saved and synced to the server. You can now proceed to collect another survey or logout from the application.",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSecondaryContainer
                     )
                 }
             }
