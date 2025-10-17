@@ -14,11 +14,14 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.example.healthsurveyappandroid.viewmodel.AuthViewModel
+import com.example.healthsurveyappandroid.viewmodel.ThemeViewModel
+import com.example.healthsurveyappandroid.ui.components.ThemeToggle
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AdminDashboardScreen(
     authViewModel: AuthViewModel,
+    themeViewModel: ThemeViewModel,
     onUserManagement: () -> Unit,
     onCreateUser: () -> Unit,
     onSurveyAnalytics: () -> Unit,
@@ -35,6 +38,10 @@ fun AdminDashboardScreen(
                     )
                 },
                 actions = {
+                    // Theme Toggle
+                    ThemeToggle(themeViewModel = themeViewModel)
+                    
+                    // Logout Button
                     IconButton(onClick = {
                         authViewModel.signOut()
                         onLogout()

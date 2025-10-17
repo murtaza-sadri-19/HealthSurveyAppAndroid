@@ -157,4 +157,7 @@ dependencies {
     // Debug
     debugImplementation(libs.androidx.ui.tooling)
     debugImplementation(libs.androidx.ui.test.manifest)
+
+    // DataStore for theme preferences
+    implementation("androidx.datastore:datastore-preferences:1.0.0")
 }

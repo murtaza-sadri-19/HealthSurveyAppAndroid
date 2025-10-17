@@ -1,14 +1,18 @@
 package com.example.healthsurveyappandroid
 
+import android.os.Build
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.annotation.RequiresApi
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
+import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.healthsurveyappandroid.data.SurveyDatabase
+import com.example.healthsurveyappandroid.location.LocationClient
 import com.example.healthsurveyappandroid.location.LocationClientImpl
 import com.example.healthsurveyappandroid.network.SheetsService
 import com.example.healthsurveyappandroid.repository.SurveyRepository
@@ -16,12 +20,13 @@ import com.example.healthsurveyappandroid.ui.screens.navigation.AppNavigation
 import com.example.healthsurveyappandroid.ui.theme.HealthSurveyAppAndroidTheme
 import com.example.healthsurveyappandroid.viewmodel.AdminViewModel
 import com.example.healthsurveyappandroid.viewmodel.AuthViewModel
-import com.example.healthsurveyappandroid.location.LocationClient
 import com.example.healthsurveyappandroid.viewmodel.SurveyViewModel
+import com.example.healthsurveyappandroid.viewmodel.ThemeViewModel
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 
 class MainActivity : ComponentActivity() {
+    @RequiresApi(Build.VERSION_CODES.Q)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
@@ -44,7 +49,11 @@ class MainActivity : ComponentActivity() {
         )
 
         setContent {
-            HealthSurveyAppAndroidTheme {
+            // Initialize ThemeViewModel
+            val themeViewModel: ThemeViewModel = viewModel()
+            val isDarkMode by themeViewModel.isDarkMode.collectAsState(initial = false)
+
+            HealthSurveyAppAndroidTheme(darkTheme = isDarkMode) {
                 Surface(
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
@@ -57,7 +66,12 @@ class MainActivity : ComponentActivity() {
                         factory = SurveyViewModelFactory(repository, locationClient)
                     )
 
-                    AppNavigation(authViewModel, surveyViewModel, adminViewModel)
+                    AppNavigation(
+                        authViewModel = authViewModel,
+                        surveyViewModel = surveyViewModel,
+                        adminViewModel = adminViewModel,
+                        themeViewModel = themeViewModel
+                    )
                 }
             }
         }
@@ -72,7 +86,8 @@ class SurveyViewModelFactory(
     override fun <T : androidx.lifecycle.ViewModel> create(modelClass: Class<T>): T {
         if (modelClass.isAssignableFrom(SurveyViewModel::class.java)) {
             @Suppress("UNCHECKED_CAST")
-            return SurveyViewModel(repository,
+            return SurveyViewModel(
+                repository,
                 locationClient as com.example.healthsurveyappandroid.location.LocationClient
             ) as T
         }

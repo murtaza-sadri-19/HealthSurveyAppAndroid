@@ -29,6 +29,7 @@ import com.example.healthsurveyappandroid.ui.screens.user.SurveyFormScreen
 import com.example.healthsurveyappandroid.viewmodel.AdminViewModel
 import com.example.healthsurveyappandroid.viewmodel.AuthViewModel
 import com.example.healthsurveyappandroid.viewmodel.SurveyViewModel
+import com.example.healthsurveyappandroid.viewmodel.ThemeViewModel
 
 sealed class Screen(val route: String) {
     object Auth : Screen("auth")
@@ -47,7 +48,8 @@ sealed class Screen(val route: String) {
 fun AppNavigation(
     authViewModel: AuthViewModel,
     surveyViewModel: SurveyViewModel,
-    adminViewModel: AdminViewModel
+    adminViewModel: AdminViewModel,
+    themeViewModel: ThemeViewModel
 ) {
     val navController = rememberNavController()
     val authState by authViewModel.authState.collectAsState()
@@ -101,6 +103,7 @@ fun AppNavigation(
         composable(Screen.AdminDashboard.route) {
             AdminDashboardScreen(
                 authViewModel = authViewModel,
+                themeViewModel = themeViewModel,
                 onUserManagement = { navController.navigate(Screen.ManageUsers.route) },
                 onCreateUser = { navController.navigate(Screen.CreateUser.route) },
                 onSurveyAnalytics = { navController.navigate(Screen.SurveyAnalytics.route) },
