@@ -1,6 +1,5 @@
 package com.example.healthsurveyappandroid.ui.screens.user
 
-import android.graphics.drawable.Icon
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
@@ -9,12 +8,10 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
-import com.android.identity.documenttype.Icon
 import com.example.healthsurveyappandroid.data.Survey
 import com.example.healthsurveyappandroid.viewmodel.SurveyViewModel
 import com.example.healthsurveyappandroid.viewmodel.AuthViewModel
 import kotlinx.coroutines.launch
-import java.lang.reflect.Modifier
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -37,7 +34,6 @@ fun SurveyFormScreen(
     var step by remember { mutableStateOf(0) }
     var isSubmitting by remember { mutableStateOf(false) }
 
-    // Show Snackbar on sync status changes
     LaunchedEffect(syncStatus) {
         when (val status = syncStatus) {
             is SurveyViewModel.SyncStatus.Syncing -> snackbarHostState.showSnackbar("Syncing pending surveys...")
@@ -49,17 +45,13 @@ fun SurveyFormScreen(
         }
     }
 
-    // Show Snackbar for submission result and react to success/failure
     LaunchedEffect(submissionResult) {
         submissionResult?.let { msg ->
             snackbarHostState.showSnackbar(msg)
-            // Reset submitting flag after response
             isSubmitting = false
-            // Check if submission was successful (you can customize the condition)
             if (msg.contains("Submitted") || msg.contains("saved locally")) {
                 onSubmitSuccess()
                 surveyViewModel.clearResult()
-                // Optionally reset the form step on success
                 step = 0
             }
         }
@@ -87,7 +79,7 @@ fun SurveyFormScreen(
                     icon = Icons.Default.Assignment,
                     onClick = {
                         scope.launch { drawerState.close() }
-                        step = 0 // Reset form
+                        step = 0
                     }
                 )
                 DrawerItem(
@@ -142,7 +134,7 @@ fun SurveyFormScreen(
                     .padding(16.dp)
             ) {
                 LinearProgressIndicator(
-                    progress = (step + 1) / 4f, // Pass Float, not lambda
+                    progress = (step + 1) / 4f,
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(8.dp)
@@ -188,8 +180,6 @@ fun SurveyFormScreen(
                                 isSubmitting = true
                                 scope.launch {
                                     surveyViewModel.submitSurvey()
-                                    // Do NOT call onSubmitSuccess() here directly,
-                                    // Instead wait for submissionResult effect above
                                 }
                             }
                         }

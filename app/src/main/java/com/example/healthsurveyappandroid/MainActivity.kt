@@ -49,8 +49,7 @@ class MainActivity : ComponentActivity() {
                     AppNavigation(
                         authViewModel = authViewModel,
                         surveyViewModel = surveyViewModel,
-                        adminViewModel = adminViewModel,
-                        googleSignIn = google
+                        adminViewModel = adminViewModel
                     )
                 }
             }

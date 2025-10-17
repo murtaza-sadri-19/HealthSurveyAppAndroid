@@ -2,7 +2,6 @@ package com.example.healthsurveyandroid.ui.screens.navigation
 
 import androidx.compose.runtime.*
 import androidx.compose.material3.*
-import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
@@ -22,7 +21,7 @@ import com.example.healthsurveyappandroid.ui.screens.user.HistoryScreen
 import com.example.healthsurveyappandroid.ui.screens.user.ProfileScreen
 import com.example.healthsurveyappandroid.ui.screens.user.SurveyFormScreen
 //import com.example.healthsurveyappandroid.ui.screens.user.UserDashboardScaffold
-import com.example.healthsurveyappandroid.utils.GoogleSignInManager
+// Removed: import com.example.healthsurveyappandroid.utils.GoogleSignInManager
 import com.example.healthsurveyappandroid.viewmodel.AdminViewModel
 import com.example.healthsurveyappandroid.viewmodel.AuthViewModel
 import com.example.healthsurveyappandroid.viewmodel.SurveyViewModel
@@ -45,8 +44,8 @@ sealed class Screen(val route: String) {
 fun AppNavigation(
     authViewModel: AuthViewModel,
     surveyViewModel: SurveyViewModel,
-    adminViewModel: AdminViewModel,
-    googleSignIn : GoogleSignInManager
+    adminViewModel: AdminViewModel
+    // Removed: googleSignIn : GoogleSignInManager
 ) {
     val navController = rememberNavController()
     val authState by authViewModel.authState.collectAsState()
@@ -74,15 +73,15 @@ fun AppNavigation(
                 onNavigateToRegister = { navController.navigate(Screen.Register.route) },
                 onNavigateToAdmin = { navController.navigate(Screen.AdminDashboard.route) },
                 onNavigateToUser = { navController.navigate(Screen.UserDashboard.route) },
-                onNavigateToForgotPassword = { navController.navigate(Screen.ForgotPassword.route) },
-                onGoogleSignIn = {} // Implement as needed
+                onNavigateToForgotPassword = { navController.navigate(Screen.ForgotPassword.route) }
+                // Removed: onGoogleSignIn
             )
         }
         composable(Screen.Register.route) {
             RegisterScreen(
                 viewModel = authViewModel,
                 onNavigateToLogin = { navController.popBackStack() },
-                onNavigateToHome = { navController.navigate(Screen.UserDashboard.route) }
+                onNavigateToHome = { navController.navigate(Screen.UserDashboard.route) },
                 onNavigateToUser = { navController.navigate(Screen.SurveyForm.route) },
                 onNavigateToForgotPassword = { navController.navigate(Screen.ForgotPassword.route) }
             )

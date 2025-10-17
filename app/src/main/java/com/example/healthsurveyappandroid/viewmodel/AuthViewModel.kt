@@ -81,9 +81,7 @@ class AuthViewModel : ViewModel() {
             }.onSuccess { document ->
                 val role = document.getString("role")
                 onResult(role)
-            }.onFailure { exception ->
-                exception.printStackTrace()
-            } catch (e: Exception) {
+            }.onFailure {
                 onResult(null)
             }
         }
@@ -92,52 +90,6 @@ class AuthViewModel : ViewModel() {
     /**
      * Sign out the current user and reset auth state.
      */
-    // ✅ NEW FUNCTION to support Compose-style Google Sign-In
-    fun signInWithGoogleCredential(
-        credential: AuthCredential,
-        onResult: (Boolean, String?) -> Unit
-    ) {
-        viewModelScope.launch {
-            _authState.value = AuthState(isLoading = true)
-
-            try {
-                val authResult = auth.signInWithCredential(credential).await()
-                val firebaseUser = authResult.user ?: throw Exception("Firebase user is null")
-
-                val uid = firebaseUser.uid
-                val userDoc = usersCollection.document(uid).get().await()
-
-                // If new user, save to Firestore
-                if (!userDoc.exists()) {
-                    usersCollection.document(uid).set(
-                        mapOf(
-                            "email" to firebaseUser.email,
-                            "name" to firebaseUser.displayName,
-                            "role" to "user" // default role
-                        )
-                    ).await()
-                }
-
-                // Fetch role (or fallback to user)
-                val role = userDoc.getString("role") ?: "user"
-
-                val user = User(
-                    id = uid,
-                    email = firebaseUser.email ?: "",
-                    name = firebaseUser.displayName ?: "",
-                    role = role
-                )
-
-                _authState.value = AuthState(user = user)
-                onResult(true, null)
-
-            } catch (e: Exception) {
-                _authState.value = AuthState(error = e.message)
-                onResult(false, e.message)
-            }
-        }
-    }
-
     fun signOut() {
         auth.signOut()
         _authState.value = AuthState()

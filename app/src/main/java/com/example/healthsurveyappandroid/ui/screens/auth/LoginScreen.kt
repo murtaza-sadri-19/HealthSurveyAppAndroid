@@ -12,7 +12,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import android.util.Patterns
-import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Visibility
@@ -47,10 +46,8 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import com.example.healthsurveyappandroid.R
-import com.example.healthsurveyappandroid.utils.GoogleSignInManager
 import com.example.healthsurveyappandroid.viewmodel.AuthViewModel
 import kotlinx.coroutines.launch
-import java.util.Locale
 
 @Composable
 fun LoginScreen(
@@ -75,36 +72,6 @@ fun LoginScreen(
 
     val context = LocalContext.current
     val activity = context as Activity
-    val webClientId = stringResource(id = R.string.default_web_client_id)
-    val googleSignInClient = remember { GoogleSignInManager.getClient(context, webClientId) }
-
-    val launcher = rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
-        val credential = GoogleSignInManager.getCredentialFromIntent(result.data)
-        if (credential != null) {
-            viewModel.signInWithGoogleCredential(credential) { success, error ->
-                if (!success) {
-                    coroutineScope.launch {
-                        snackbarHostState.showSnackbar(error ?: "Google Sign-In failed")
-                    }
-                } else {
-                    val user = viewModel.authState.value.user
-                    when (user?.role) {
-                        "admin" -> onNavigateToAdmin()
-                        "user" -> onNavigateToUser()
-                        else -> {
-                            coroutineScope.launch {
-                                snackbarHostState.showSnackbar("Unknown role: ${user?.role}")
-                            }
-                        }
-                    }
-                }
-            }
-        } else {
-            coroutineScope.launch {
-                snackbarHostState.showSnackbar("Google Sign-In cancelled or failed.")
-            }
-        }
-    }
 
     LaunchedEffect(errorMessage) {
         errorMessage?.let {
@@ -238,19 +205,6 @@ fun LoginScreen(
                 } else {
                     Text("Login as ${expectedRole.capitalize()}")
                 }
-            }
-
-            Button(
-                onClick = {
-                    val signInIntent = googleSignInClient.signInIntent
-                    launcher.launch(signInIntent)
-                },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(50.dp)
-                    .padding(top = 16.dp)
-            ) {
-                Text("Sign in with Google")
             }
 
             Spacer(modifier = Modifier.height(12.dp))
