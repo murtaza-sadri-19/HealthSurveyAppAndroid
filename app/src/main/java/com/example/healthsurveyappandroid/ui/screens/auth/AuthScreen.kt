@@ -34,8 +34,8 @@ import com.example.healthsurveyappandroid.ui.components.ThemeToggle
 import com.example.healthsurveyappandroid.viewmodel.ThemeViewModel
 import kotlinx.coroutines.launch
 
-enum class AuthTab {
-    LOGIN, REGISTER
+enum class LoginType {
+    ADMIN, USER
 }
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalAnimationApi::class)
@@ -46,10 +46,9 @@ fun AuthScreen(
     onNavigateToAdmin: () -> Unit,
     onNavigateToUser: () -> Unit
 ) {
-    var selectedTab by remember { mutableStateOf(AuthTab.LOGIN) }
+    var selectedLoginType by remember { mutableStateOf(LoginType.USER) }
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
-    var name by remember { mutableStateOf("") }
     var passwordVisible by remember { mutableStateOf(false) }
     var isLoading by remember { mutableStateOf(false) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
@@ -62,9 +61,26 @@ fun AuthScreen(
     LaunchedEffect(viewModel.authState) {
         viewModel.authState.collect { state ->
             state.user?.let { user ->
-                when (user.role) {
-                    "admin" -> onNavigateToAdmin()
-                    else -> onNavigateToUser()
+                // Validate role matches selected login type
+                when (selectedLoginType) {
+                    LoginType.ADMIN -> {
+                        if (user.role == "admin") {
+                            onNavigateToAdmin()
+                        } else {
+                            isLoading = false
+                            errorMessage = "This account is not an admin account. Please use User Login."
+                            viewModel.signOut()
+                        }
+                    }
+                    LoginType.USER -> {
+                        if (user.role == "user") {
+                            onNavigateToUser()
+                        } else {
+                            isLoading = false
+                            errorMessage = "This is an admin account. Please use Admin Login."
+                            viewModel.signOut()
+                        }
+                    }
                 }
             }
         }
@@ -75,7 +91,7 @@ fun AuthScreen(
             coroutineScope.launch {
                 snackbarHostState.showSnackbar(
                     message = it,
-                    duration = SnackbarDuration.Short
+                    duration = SnackbarDuration.Long
                 )
                 errorMessage = null
             }
@@ -134,20 +150,32 @@ fun AuthScreen(
                 Spacer(modifier = Modifier.height(40.dp))
                 
                 // Header Section
-                Icon(
-                    imageVector = Icons.Default.Favorite,
-                    contentDescription = "Health Icon",
-                    modifier = Modifier.size(64.dp),
-                    tint = MaterialTheme.colorScheme.primary
-                )
+                Surface(
+                    shape = RoundedCornerShape(100.dp),
+                    color = MaterialTheme.colorScheme.primaryContainer,
+                    modifier = Modifier.size(80.dp)
+                ) {
+                    Box(
+                        contentAlignment = Alignment.Center,
+                        modifier = Modifier.fillMaxSize()
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Favorite,
+                            contentDescription = "Health Icon",
+                            modifier = Modifier.size(48.dp),
+                            tint = MaterialTheme.colorScheme.primary
+                        )
+                    }
+                }
                 
                 Spacer(modifier = Modifier.height(16.dp))
                 
                 Text(
-                    text = "Health Survey",
-                    style = MaterialTheme.typography.headlineLarge,
+                    text = "Health Survey System",
+                    style = MaterialTheme.typography.headlineMedium,
                     fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.onBackground
+                    color = MaterialTheme.colorScheme.onBackground,
+                    textAlign = TextAlign.Center
                 )
                 
                 Text(
@@ -159,7 +187,7 @@ fun AuthScreen(
                 
                 Spacer(modifier = Modifier.height(40.dp))
                 
-                // Tab Selector Card
+                // Login Type Selector Card
                 Surface(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -171,35 +199,46 @@ fun AuthScreen(
                     Column(
                         modifier = Modifier.padding(24.dp)
                     ) {
-                        // Custom Tab Row
+                        // Title
+                        Text(
+                            text = "Select Login Type",
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.SemiBold,
+                            color = MaterialTheme.colorScheme.onSurface,
+                            modifier = Modifier.padding(bottom = 16.dp)
+                        )
+                        
+                        // Login Type Toggle
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .clip(RoundedCornerShape(12.dp))
                                 .background(MaterialTheme.colorScheme.surfaceVariant)
-                                .padding(4.dp),
+                                .padding(1.dp),
                             horizontalArrangement = Arrangement.spacedBy(4.dp)
                         ) {
-                            TabButton(
-                                text = "Login",
-                                isSelected = selectedTab == AuthTab.LOGIN,
+                            LoginTypeButton(
+                                text = "User Login",
+                                icon = Icons.Default.Person,
+                                isSelected = selectedLoginType == LoginType.USER,
                                 onClick = { 
-                                    selectedTab = AuthTab.LOGIN
+                                    selectedLoginType = LoginType.USER
                                     email = ""
                                     password = ""
-                                    name = ""
+                                    passwordVisible = false
                                 },
                                 modifier = Modifier.weight(1f)
                             )
                             
-                            TabButton(
-                                text = "Register",
-                                isSelected = selectedTab == AuthTab.REGISTER,
+                            LoginTypeButton(
+                                text = "Admin Login",
+                                icon = Icons.Default.AdminPanelSettings,
+                                isSelected = selectedLoginType == LoginType.ADMIN,
                                 onClick = { 
-                                    selectedTab = AuthTab.REGISTER
+                                    selectedLoginType = LoginType.ADMIN
                                     email = ""
                                     password = ""
-                                    name = ""
+                                    passwordVisible = false
                                 },
                                 modifier = Modifier.weight(1f)
                             )
@@ -207,69 +246,109 @@ fun AuthScreen(
                         
                         Spacer(modifier = Modifier.height(24.dp))
                         
-                        // Animated Content
+                        // Info Card
+                        Surface(
+                            modifier = Modifier.fillMaxWidth(),
+                            shape = RoundedCornerShape(12.dp),
+                            color = if (selectedLoginType == LoginType.ADMIN) {
+                                MaterialTheme.colorScheme.tertiaryContainer.copy(alpha = 0.5f)
+                            } else {
+                                MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f)
+                            }
+                        ) {
+                            Row(
+                                modifier = Modifier.padding(12.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Icon(
+                                    imageVector = if (selectedLoginType == LoginType.ADMIN) {
+                                        Icons.Default.Shield
+                                    } else {
+                                        Icons.Default.Info
+                                    },
+                                    contentDescription = null,
+                                    tint = if (selectedLoginType == LoginType.ADMIN) {
+                                        MaterialTheme.colorScheme.tertiary
+                                    } else {
+                                        MaterialTheme.colorScheme.primary
+                                    },
+                                    modifier = Modifier.size(20.dp)
+                                )
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text(
+                                    text = if (selectedLoginType == LoginType.ADMIN) {
+                                        "Admin login is for authorized personnel only"
+                                    } else {
+                                        "Use your credentials to access the health survey"
+                                    },
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                        }
+                        
+                        Spacer(modifier = Modifier.height(24.dp))
+                        
+                        // Login Form with Animation
                         AnimatedContent(
-                            targetState = selectedTab,
+                            targetState = selectedLoginType,
                             transitionSpec = {
                                 fadeIn(animationSpec = tween(300)) with
                                         fadeOut(animationSpec = tween(300))
                             },
-                            label = "Auth Form Animation"
-                        ) { tab ->
-                            when (tab) {
-                                AuthTab.LOGIN -> {
-                                    LoginForm(
-                                        email = email,
-                                        onEmailChange = { email = it },
-                                        password = password,
-                                        onPasswordChange = { password = it },
-                                        passwordVisible = passwordVisible,
-                                        onPasswordVisibilityToggle = { passwordVisible = !passwordVisible },
-                                        isLoading = isLoading,
-                                        onLogin = {
-                                            if (email.isBlank() || password.isBlank()) {
-                                                errorMessage = "Please fill in all fields"
-                                                return@LoginForm
-                                            }
-                                            isLoading = true
-                                            focusManager.clearFocus()
-                                            viewModel.loginUser(email, password) { success, error ->
-                                                isLoading = false
-                                                if (!success) {
-                                                    errorMessage = error ?: "Login failed"
-                                                }
-                                            }
-                                        },
-                                        focusManager = focusManager
-                                    )
-                                }
-                                AuthTab.REGISTER -> {
-                                    RegisterForm(
-                                        name = name,
-                                        onNameChange = { name = it },
-                                        email = email,
-                                        onEmailChange = { email = it },
-                                        password = password,
-                                        onPasswordChange = { password = it },
-                                        passwordVisible = passwordVisible,
-                                        onPasswordVisibilityToggle = { passwordVisible = !passwordVisible },
-                                        focusManager = focusManager
-                                    )
-                                }
-                            }
+                            label = "Login Type Animation"
+                        ) { loginType ->
+                            LoginForm(
+                                loginType = loginType,
+                                email = email,
+                                onEmailChange = { email = it },
+                                password = password,
+                                onPasswordChange = { password = it },
+                                passwordVisible = passwordVisible,
+                                onPasswordVisibilityToggle = { passwordVisible = !passwordVisible },
+                                isLoading = isLoading,
+                                onLogin = {
+                                    if (email.isBlank() || password.isBlank()) {
+                                        errorMessage = "Please fill in all fields"
+                                        return@LoginForm
+                                    }
+                                    isLoading = true
+                                    focusManager.clearFocus()
+                                    
+                                    viewModel.loginUser(email, password) { success, error ->
+                                        if (!success) {
+                                            isLoading = false
+                                            errorMessage = error ?: "Login failed"
+                                        }
+                                        // Success case handled in LaunchedEffect with role validation
+                                    }
+                                },
+                                focusManager = focusManager
+                            )
                         }
                     }
                 }
                 
-                Spacer(modifier = Modifier.height(24.dp))
+                Spacer(modifier = Modifier.height(16.dp))
+                
+                // Contact Admin Note
+                if (selectedLoginType == LoginType.USER) {
+                    Text(
+                        text = "Don't have an account? Contact your administrator",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        textAlign = TextAlign.Center
+                    )
+                }
             }
         }
     }
 }
 
 @Composable
-fun TabButton(
+fun LoginTypeButton(
     text: String,
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
     isSelected: Boolean,
     onClick: () -> Unit,
     modifier: Modifier = Modifier
@@ -281,7 +360,7 @@ fun TabButton(
             Color.Transparent
         },
         animationSpec = tween(300),
-        label = "Tab Background Color"
+        label = "Button Background Color"
     )
     
     val contentColor by animateColorAsState(
@@ -291,12 +370,12 @@ fun TabButton(
             MaterialTheme.colorScheme.onSurfaceVariant
         },
         animationSpec = tween(300),
-        label = "Tab Content Color"
+        label = "Button Content Color"
     )
     
     Button(
         onClick = onClick,
-        modifier = modifier.height(48.dp),
+        modifier = modifier.height(56.dp),
         colors = ButtonDefaults.buttonColors(
             containerColor = backgroundColor,
             contentColor = contentColor
@@ -306,16 +385,28 @@ fun TabButton(
             defaultElevation = if (isSelected) 2.dp else 0.dp
         )
     ) {
-        Text(
-            text = text,
-            style = MaterialTheme.typography.titleMedium,
-            fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Medium
-        )
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
+        ) {
+            Icon(
+                imageVector = icon,
+                contentDescription = null,
+                modifier = Modifier.size(24.dp)
+            )
+            Spacer(modifier = Modifier.height(4.dp))
+            Text(
+                text = text,
+                style = MaterialTheme.typography.labelMedium,
+                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium
+            )
+        }
     }
 }
 
 @Composable
 fun LoginForm(
+    loginType: LoginType,
     email: String,
     onEmailChange: (String) -> Unit,
     password: String,
@@ -331,7 +422,7 @@ fun LoginForm(
         ModernTextField(
             value = email,
             onValueChange = onEmailChange,
-            label = "Email Address",
+            label = if (loginType == LoginType.ADMIN) "Admin Email" else "User Email",
             placeholder = "Enter your email",
             leadingIcon = Icons.Default.Email,
             keyboardOptions = KeyboardOptions(
@@ -378,7 +469,11 @@ fun LoginForm(
             enabled = !isLoading,
             shape = RoundedCornerShape(12.dp),
             colors = ButtonDefaults.buttonColors(
-                containerColor = MaterialTheme.colorScheme.primary
+                containerColor = if (loginType == LoginType.ADMIN) {
+                    MaterialTheme.colorScheme.tertiary
+                } else {
+                    MaterialTheme.colorScheme.primary
+                }
             )
         ) {
             if (isLoading) {
@@ -389,74 +484,19 @@ fun LoginForm(
                 )
             } else {
                 Icon(
-                    imageVector = Icons.Default.Login,
+                    imageVector = if (loginType == LoginType.ADMIN) {
+                        Icons.Default.AdminPanelSettings
+                    } else {
+                        Icons.Default.Login
+                    },
                     contentDescription = null,
                     modifier = Modifier.size(20.dp)
                 )
                 Spacer(modifier = Modifier.width(8.dp))
                 Text(
-                    text = "Sign In",
+                    text = if (loginType == LoginType.ADMIN) "Sign In as Admin" else "Sign In",
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.SemiBold
-                )
-            }
-        }
-    }
-}
-
-@Composable
-fun RegisterForm(
-    name: String,
-    onNameChange: (String) -> Unit,
-    email: String,
-    onEmailChange: (String) -> Unit,
-    password: String,
-    onPasswordChange: (String) -> Unit,
-    passwordVisible: Boolean,
-    onPasswordVisibilityToggle: () -> Unit,
-    focusManager: androidx.compose.ui.focus.FocusManager
-) {
-    Column {
-        Text(
-            text = "Registration is currently disabled",
-            style = MaterialTheme.typography.bodyLarge,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            textAlign = TextAlign.Center,
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(vertical = 16.dp)
-        )
-        
-        Text(
-            text = "Please contact your administrator to create an account.",
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            textAlign = TextAlign.Center,
-            modifier = Modifier.fillMaxWidth()
-        )
-        
-        Spacer(modifier = Modifier.height(16.dp))
-        
-        Surface(
-            modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(12.dp),
-            color = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.5f)
-        ) {
-            Row(
-                modifier = Modifier.padding(16.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Icon(
-                    imageVector = Icons.Default.Info,
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.secondary,
-                    modifier = Modifier.size(24.dp)
-                )
-                Spacer(modifier = Modifier.width(12.dp))
-                Text(
-                    text = "Only administrators can create new user accounts",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSecondaryContainer
                 )
             }
         }

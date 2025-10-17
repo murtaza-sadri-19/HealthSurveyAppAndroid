@@ -27,8 +27,10 @@ private val LightColorScheme = lightColorScheme(
     secondaryContainer = Color(0xFFD6ECFF),
     onSecondaryContainer = Color(0xFF001D36),
     
-    tertiary = HealthAccent,
+    tertiary = HealthPrimary,
     onTertiary = Color.White,
+    tertiaryContainer = Color(0xFFD0F5E4),
+    onTertiaryContainer = Color(0xFF00210F),
     
     error = HealthError,
     onError = Color.White,
@@ -58,8 +60,10 @@ private val DarkColorScheme = darkColorScheme(
     secondaryContainer = Color(0xFF004A7C),
     onSecondaryContainer = Color(0xFFD6ECFF),
     
-    tertiary = Color(0xFFFF8A80),
-    onTertiary = Color(0xFF561E19),
+    tertiary = HealthPrimaryDark,
+    onTertiary = Color(0xFF003823),
+    tertiaryContainer = Color(0xFF005235),
+    onTertiaryContainer = Color(0xFFB8F4D7),
     
     error = Color(0xFFFFB4AB),
     onError = Color(0xFF690005),
