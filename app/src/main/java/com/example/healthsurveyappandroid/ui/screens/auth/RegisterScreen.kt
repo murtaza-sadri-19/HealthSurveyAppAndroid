@@ -16,7 +16,9 @@ import com.example.healthsurveyappandroid.viewmodel.AuthViewModel
 fun RegisterScreen(
     viewModel: AuthViewModel,
     onNavigateToLogin: () -> Unit,
-    onNavigateToHome: () -> Unit
+    onNavigateToHome: () -> Unit,
+    onNavigateToUser: () -> Unit,
+    onNavigateToForgotPassword: () -> Unit
 ) {
     // Optionally, you can show a message that registration is disabled.
     Column(

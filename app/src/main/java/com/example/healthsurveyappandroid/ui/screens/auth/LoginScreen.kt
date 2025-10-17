@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import android.util.Patterns
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Visibility
@@ -45,10 +46,8 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import com.example.healthsurveyappandroid.R
-import com.example.healthsurveyappandroid.utils.GoogleSignInManager
 import com.example.healthsurveyappandroid.viewmodel.AuthViewModel
 import kotlinx.coroutines.launch
-import java.util.Locale
 
 @Composable
 fun LoginScreen(
@@ -73,36 +72,6 @@ fun LoginScreen(
 
     val context = LocalContext.current
     val activity = context as Activity
-    val webClientId = stringResource(id = R.string.default_web_client_id)
-    val googleSignInClient = remember { GoogleSignInManager.getClient(context, webClientId) }
-
-    val launcher = rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
-        val credential = GoogleSignInManager.getCredentialFromIntent(result.data)
-        if (credential != null) {
-            viewModel.signInWithGoogleCredential(credential) { success, error ->
-                if (!success) {
-                    coroutineScope.launch {
-                        snackbarHostState.showSnackbar(error ?: "Google Sign-In failed")
-                    }
-                } else {
-                    val user = viewModel.authState.value.user
-                    when (user?.role) {
-                        "admin" -> onNavigateToAdmin()
-                        "user" -> onNavigateToUser()
-                        else -> {
-                            coroutineScope.launch {
-                                snackbarHostState.showSnackbar("Unknown role: ${user?.role}")
-                            }
-                        }
-                    }
-                }
-            }
-        } else {
-            coroutineScope.launch {
-                snackbarHostState.showSnackbar("Google Sign-In cancelled or failed.")
-            }
-        }
-    }
 
     LaunchedEffect(errorMessage) {
         errorMessage?.let {
@@ -156,7 +125,13 @@ fun LoginScreen(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(bottom = 16.dp),
-                singleLine = true
+                singleLine = true,
+                isError = email.isNotBlank() && !Patterns.EMAIL_ADDRESS.matcher(email).matches(),
+                supportingText = {
+                    if (email.isNotBlank() && !Patterns.EMAIL_ADDRESS.matcher(email).matches()) {
+                        Text("Enter a valid email address", color = MaterialTheme.colorScheme.error)
+                    }
+                }
             )
 
             OutlinedTextField(
@@ -171,7 +146,7 @@ fun LoginScreen(
                 trailingIcon = {
                     IconButton(onClick = { isPasswordVisible = !isPasswordVisible }) {
                         Icon(
-                            imageVector = if (isPasswordVisible) Icons.Default.Visibility else Icons.Default.VisibilityOff,
+                            imageVector = if (isPasswordVisible) Icons.Filled.Visibility else Icons.Filled.VisibilityOff,
                             contentDescription = null
                         )
                     }
@@ -192,10 +167,15 @@ fun LoginScreen(
             Button(
                 onClick = {
                     isLoading = true
-                    viewModel.loginUser(email, password) { success, error, user ->
+                    viewModel.loginUser(email.trim(), password) { success, error, user ->
                         isLoading = false
                         if (!success) {
-                            errorMessage = error ?: "Login failed"
+                            errorMessage = when {
+                                error == null -> "Login failed"
+                                error.contains("There is no user record") -> "User not found"
+                                error.contains("The password is invalid") -> "Incorrect password"
+                                else -> "Login failed"
+                            }
                         } else if (user?.role != expectedRole) {
                             errorMessage = "You are not allowed to log in as ${tabs[selectedTabIndex]}"
                             viewModel.signOut()
@@ -212,7 +192,10 @@ fun LoginScreen(
                     .fillMaxWidth()
                     .height(50.dp)
                     .padding(top = 8.dp),
-                enabled = !isLoading
+                enabled = !isLoading &&
+                        email.isNotBlank() &&
+                        password.isNotBlank() &&
+                        Patterns.EMAIL_ADDRESS.matcher(email).matches()
             ) {
                 if (isLoading) {
                     CircularProgressIndicator(
@@ -220,21 +203,8 @@ fun LoginScreen(
                         color = MaterialTheme.colorScheme.onPrimary
                     )
                 } else {
-                    Text("Login as ${expectedRole.capitalize(Locale.ROOT)}")
+                    Text("Login as ${expectedRole.capitalize()}")
                 }
-            }
-
-            Button(
-                onClick = {
-                    val signInIntent = googleSignInClient.signInIntent
-                    launcher.launch(signInIntent)
-                },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(50.dp)
-                    .padding(top = 16.dp)
-            ) {
-                Text("Sign in with Google")
             }
 
             Spacer(modifier = Modifier.height(12.dp))

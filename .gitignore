@@ -1,0 +1,75 @@
+# NOTE: use scripts/unstage-ignored.sh or scripts/unstage-ignored.ps1 to unstage tracked files that should be ignored
+
+# Gradle
+.gradle/
+build/
+**/build/
+
+# Local configuration (sdk path, etc)
+local.properties
+
+# Log files
+*.log
+
+# Android/IntelliJ/Android Studio
+*.iml
+*.iws
+.idea/
+.vscode/
+captures/
+
+# Generated files
+/generated/
+out/
+bin/
+gen/
+
+# Android specific
+*.apk
+*.ap_
+*.aab
+*.dex
+*.class
+*.so
+*.jar
+
+# NDK, CMake, external native build
+.externalNativeBuild/
+.cxx/
+obj/
+
+# Keystore and sensitive files
+*.jks
+*.keystore
+*.pem
+*.p12
+*.pfx
+*.env
+.env.*
+
+# Firebase / Google services
+google-services.json
+google-services.*.json
+
+# Crashlytics / Fabric
+fabric.properties
+crashlytics.properties
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Misc
+.idea/libraries/
+.gradle/
+.gradle/*
+
+# Jetifier/cache (if present)
+**/.gradle/
+**/.idea/
+
+# Ignore IDE workspace and run configs but keep project-level settings if desired
+# (uncomment to ignore all .idea files)
+# .idea/*
+
+# End of file
