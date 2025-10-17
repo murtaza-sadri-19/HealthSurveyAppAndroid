@@ -9,41 +9,79 @@ import androidx.compose.material3.dynamicDarkColorScheme
 import androidx.compose.material3.dynamicLightColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.SideEffect
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalContext
-
-private val DarkColorScheme = darkColorScheme(
-    primary = PrimaryColor,
-    secondary = SecondaryColor,
-    background = Color(0xFF121212),
-    surface = Color(0xFF222222),
-    error = ErrorColor,
-    onPrimary = Color.White,
-    onSecondary = Color.Black,
-    onBackground = Color.White,
-    onSurface = Color.White,
-    onError = Color.White,
-)
+import androidx.compose.ui.platform.LocalView
+import androidx.core.view.WindowCompat
 
 private val LightColorScheme = lightColorScheme(
-    primary = PrimaryColor,
-    secondary = SecondaryColor,
-    background = BackgroundColor,
-    surface = SurfaceColor,
-    error = ErrorColor,
+    primary = HealthPrimary,
     onPrimary = Color.White,
-    onSecondary = Color.Black,
-    onBackground = Color.Black,
-    onSurface = Color.Black,
+    primaryContainer = Color(0xFFD0F5E4),
+    onPrimaryContainer = Color(0xFF00210F),
+    
+    secondary = HealthSecondary,
+    onSecondary = Color.White,
+    secondaryContainer = Color(0xFFD6ECFF),
+    onSecondaryContainer = Color(0xFF001D36),
+    
+    tertiary = HealthAccent,
+    onTertiary = Color.White,
+    
+    error = HealthError,
     onError = Color.White,
+    errorContainer = Color(0xFFFFDAD6),
+    onErrorContainer = Color(0xFF410002),
+    
+    background = HealthBackground,
+    onBackground = TextPrimaryLight,
+    
+    surface = HealthSurface,
+    onSurface = TextPrimaryLight,
+    surfaceVariant = Color(0xFFF3F4F6),
+    onSurfaceVariant = TextSecondaryLight,
+    
+    outline = CardBorderLight,
+    outlineVariant = DividerLight
 )
 
+private val DarkColorScheme = darkColorScheme(
+    primary = HealthPrimaryDark,
+    onPrimary = Color(0xFF003823),
+    primaryContainer = Color(0xFF005235),
+    onPrimaryContainer = Color(0xFFB8F4D7),
+    
+    secondary = HealthSecondaryDark,
+    onSecondary = Color(0xFF003258),
+    secondaryContainer = Color(0xFF004A7C),
+    onSecondaryContainer = Color(0xFFD6ECFF),
+    
+    tertiary = Color(0xFFFF8A80),
+    onTertiary = Color(0xFF561E19),
+    
+    error = Color(0xFFFFB4AB),
+    onError = Color(0xFF690005),
+    errorContainer = Color(0xFF93000A),
+    onErrorContainer = Color(0xFFFFDAD6),
+    
+    background = HealthBackgroundDark,
+    onBackground = TextPrimaryDark,
+    
+    surface = HealthSurfaceDark,
+    onSurface = TextPrimaryDark,
+    surfaceVariant = HealthSurfaceVariantDark,
+    onSurfaceVariant = TextSecondaryDark,
+    
+    outline = CardBorderDark,
+    outlineVariant = DividerDark
+)
 
 @Composable
 fun HealthSurveyAppAndroidTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
-    // Dynamic color is available on Android 12+
-    dynamicColor: Boolean = true,
+    dynamicColor: Boolean = false, // Disabled for consistent health theme
     content: @Composable () -> Unit
 ) {
     val colorScheme = when {
@@ -51,9 +89,17 @@ fun HealthSurveyAppAndroidTheme(
             val context = LocalContext.current
             if (darkTheme) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
         }
-
         darkTheme -> DarkColorScheme
         else -> LightColorScheme
+    }
+    
+    val view = LocalView.current
+    if (!view.isInEditMode) {
+        SideEffect {
+            val window = (view.context as Activity).window
+            window.statusBarColor = colorScheme.background.toArgb()
+            WindowCompat.getInsetsController(window, view).isAppearanceLightStatusBars = !darkTheme
+        }
     }
 
     MaterialTheme(
